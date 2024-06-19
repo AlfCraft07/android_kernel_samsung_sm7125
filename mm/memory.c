@@ -4214,7 +4214,6 @@ int __handle_speculative_fault(struct mm_struct *mm, unsigned long address,
 		count_vm_event(SPECULATIVE_PGFAULT);
 		put_vma(vmf.vma);
 		*vma = NULL;
-		check_sync_rss_stat(current);
 	}
 
 	/*
@@ -4240,7 +4239,6 @@ out_segv:
 	 */
 	put_vma(vmf.vma);
 	*vma = NULL;
-	check_sync_rss_stat(current);
 	return VM_FAULT_SIGSEGV;
 }
 
