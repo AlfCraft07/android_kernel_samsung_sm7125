@@ -329,6 +329,40 @@ config AUDIT_TREE
 	depends on AUDITSYSCALL
 	select FSNOTIFY
 
+choice
+    prompt "Fake uname kernel version"
+    default FAKE_UNAME_NONE
+    help
+      Kernel side spoof for BPF.
+
+config FAKE_UNAME_NONE
+    bool "None"
+    help
+      Don't spoof uname version.
+
+config FAKE_UNAME_4_19
+    bool "4.19"
+
+config FAKE_UNAME_5_4
+    bool "5.4"
+
+config FAKE_UNAME_5_10
+    bool "5.10"
+
+config FAKE_UNAME_5_15
+    bool "5.15"
+
+config FAKE_UNAME_6_1
+	bool "6.1"
+
+config FAKE_UNAME_6_6
+	bool "6.6"
+
+config FAKE_UNAME_6_12
+	bool "6.12"
+
+endchoice
+
 source "kernel/irq/Kconfig"
 source "kernel/time/Kconfig"
 
