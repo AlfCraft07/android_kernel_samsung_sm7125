@@ -357,6 +357,7 @@ static inline void sk_psock_update_proto(struct sock *sk,
 
 		psock->saved_unhash = orig->unhash;
 		psock->saved_close = orig->close;
+		psock->saved_destroy = orig->destroy;
 		psock->saved_write_space = sk->sk_write_space;
 
 		psock->sk_proto = orig;
