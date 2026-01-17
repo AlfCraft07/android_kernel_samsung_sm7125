@@ -1223,7 +1223,7 @@ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 #elif defined(CONFIG_FAKE_UNAME_6_12)
 				strcpy(tmp.release, "6.12.200");
 #endif
-				pr_debug("fake uname: %s/%d release=%s\n",
+				pr_info("fake uname: %s/%d release=%s\n",
 					current->comm, current->pid, tmp.release);
 			}
 	}
