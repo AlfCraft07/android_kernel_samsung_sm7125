@@ -34,6 +34,9 @@
 #include "binder_alloc.h"
 #include "binder_trace.h"
 
+#ifdef CONFIG_SAMSUNG_FREECESS
+#include <linux/freecess.h>
+#endif
 struct list_lru binder_alloc_lru;
 
 static DEFINE_MUTEX(binder_alloc_mmap_lock);
@@ -405,6 +408,9 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 	void __user *end_page_addr;
 	size_t size, data_offsets_size;
 	int ret;
+#ifdef CONFIG_SAMSUNG_FREECESS
+	struct task_struct *p = NULL;
+#endif
 
 	if (!binder_alloc_get_vma(alloc)) {
 		binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
@@ -432,6 +438,18 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 
 	/* Pad 0-size buffers so they get assigned unique addresses */
 	size = max(size, sizeof(void *));
+
+#ifdef CONFIG_SAMSUNG_FREECESS
+	if (is_async && (alloc->free_async_space < 3*(size + sizeof(struct binder_buffer))
+		|| (alloc->free_async_space < ((alloc->buffer_size/2)*9/10)))) {
+		rcu_read_lock();
+		p = find_task_by_vpid(alloc->pid);
+		rcu_read_unlock();
+		if (p != NULL && thread_group_is_frozen(p)) {
+			binder_report(p, -1, "free_buffer_full", is_async);
+		}
+	}
+#endif
 
 	if (is_async && alloc->free_async_space < size) {
 		binder_alloc_debug(BINDER_DEBUG_BUFFER_ALLOC,
