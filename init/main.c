@@ -110,47 +110,10 @@
 
 #include <linux/sec_debug.h>
 
-#ifdef CONFIG_SECURITY_DEFEX
-#include <linux/defex.h>
-void __init __weak defex_load_rules(void) { }
-#endif
-
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
 extern void radix_tree_init(void);
-
-#ifdef CONFIG_DEFERRED_INITCALLS
-extern initcall_t __deferred_initcall_start[], __deferred_initcall_end[];
-
-/* call deferred init routines */
-static void __ref do_deferred_initcalls(struct work_struct *work)
-{
-	initcall_t *call;
-	static bool already_run;
-
-	if (already_run) {
-		pr_warn("%s() has already run\n", __func__);
-		return;
-	}
-
-	already_run = true;
-
-	pr_err("Running %s()\n", __func__);
-
-	for (call = __deferred_initcall_start;
-			call < __deferred_initcall_end; call++)
-		do_one_initcall(*call);
-
-	ftrace_free_init_mem();
-	free_initmem();
-#ifdef CONFIG_UH_RKP
-	rkp_deferred_init();
-#endif
-}
-
-static DECLARE_WORK(deferred_initcall_work, do_deferred_initcalls);
-#endif
 
 /*
  * Debug helper: via this flag we know that we are in 'early bootup code'
@@ -1297,10 +1260,8 @@ static int __ref kernel_init(void *unused)
 
 	/* need to finish all async __init code before freeing the memory */
 	async_synchronize_full();
-#ifndef CONFIG_DEFERRED_INITCALLS
 	ftrace_free_init_mem();
 	free_initmem();
-#endif
 	mark_readonly();
 #ifndef CONFIG_DEFERRED_INITCALLS
 #ifdef CONFIG_UH_RKP
@@ -1325,10 +1286,6 @@ static int __ref kernel_init(void *unused)
 	if (ramdisk_execute_command) {
 		ret = run_init_process(ramdisk_execute_command);
 		if (!ret) {
-#ifdef CONFIG_DEFERRED_INITCALLS
-			pr_err("DEFERRED init start by ramdisk(%s) %s(%d)\n", ramdisk_execute_command, __func__, __LINE__);
-			schedule_work(&deferred_initcall_work);
-#endif
 			return 0;
 		}
 		pr_err("Failed to execute %s (error %d)\n",
@@ -1344,9 +1301,6 @@ static int __ref kernel_init(void *unused)
 	if (execute_command) {
 		ret = run_init_process(execute_command);
 		if (!ret) {
-#ifdef CONFIG_DEFERRED_INITCALLS
-			schedule_work(&deferred_initcall_work);
-#endif
 			return 0;
 		}
 		panic("Requested init %s failed (error %d).",
@@ -1428,7 +1382,4 @@ static noinline void __init kernel_init_freeable(void)
 
 	integrity_load_keys();
 	load_default_modules();
-#ifdef CONFIG_SECURITY_DEFEX
-	defex_load_rules();
-#endif
 }
