@@ -21,9 +21,6 @@
 
 #include <linux/pagemap.h>
 #include <linux/swap.h>
-#ifdef CONFIG_UH_RKP
-#include <linux/rkp.h>
-#endif
 
 static inline void __tlb_remove_table(void *_table)
 {

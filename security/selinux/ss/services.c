@@ -52,12 +52,6 @@
 #include <linux/selinux.h>
 #include <linux/flex_array.h>
 #include <linux/vmalloc.h>
-#ifdef CONFIG_UH
-#include <linux/uh.h>
-#ifdef CONFIG_RKP_KDP
-#include <linux/rkp.h>
-#endif
-#endif
 #include <net/netlabel.h>
 
 #include "flask.h"
@@ -87,11 +81,7 @@ const char *selinux_policycap_names[__POLICYDB_CAPABILITY_MAX] = {
 };
 
 static struct selinux_ss selinux_ss;
-#if (defined CONFIG_RKP_KDP && defined CONFIG_SAMSUNG_PRODUCT_SHIP)
-int ss_initialized __kdp_ro;
-#else
 int ss_initialized;
-#endif
 
 void selinux_ss_init(struct selinux_ss **ss)
 {

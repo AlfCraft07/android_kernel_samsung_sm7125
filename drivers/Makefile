@@ -213,8 +213,6 @@ obj-$(CONFIG_BATTERY_SAMSUNG)	+= battery_v2/
 endif
 
 obj-y				+= motor/
-# uH                                                                            
-obj-$(CONFIG_UH)	+= uh/
 
 obj-$(CONFIG_ICD)		+= security/samsung/icdrv/
 

@@ -101,13 +101,6 @@
 #include <linux/secgpio_dvs.h>
 #endif
 
-#ifdef CONFIG_UH
-#include <linux/uh.h>
-#endif
-#ifdef CONFIG_UH_RKP
-#include <linux/rkp.h>
-#endif
-
 #include <linux/sec_debug.h>
 
 static int kernel_init(void *);
@@ -497,10 +490,6 @@ static noinline void __ref rest_init(void)
 	cpu_startup_entry(CPUHP_ONLINE);
 }
 
-#ifdef CONFIG_RKP_KDP
-int is_recovery __kdp_ro = 0;
-#endif
-
 /* Check for early params. */
 static int __init do_early_param(char *param, char *val,
 				 const char *unused, void *arg)
@@ -519,14 +508,6 @@ static int __init do_early_param(char *param, char *val,
 	}
 	/* We accept everything at this stage. */
 	unset_memsize_reserved_name();
-#ifdef CONFIG_RKP_KDP
-	if ((strncmp(param, "bootmode", 9) == 0)) {
-			//printk("\n RKP22 In Recovery Mode= %d\n",*val);
-			if ((strncmp(val, "2", 2) == 0)) {
-				is_recovery = 1;
-			}
-	}
-#endif
 	return 0;
 }
 
@@ -612,94 +593,6 @@ static void __init mm_init(void)
 	pti_init();
 }
 
-#ifdef CONFIG_UH_RKP
-rkp_init_t rkp_init_data __rkp_ro = {
-	.magic = RKP_INIT_MAGIC,
-	.vmalloc_start = VMALLOC_START,
-	.no_fimc_verify = 1,
-	.fimc_phys_addr = 0,
-	._text = (u64)_text,
-	._etext = (u64)_etext,
-	._srodata = (u64)__start_rodata,
-	._erodata = (u64)__end_rodata,
-	 .large_memory = 0,
-};
-u8 rkp_started __rkp_ro = 0; /* 0 initialized by c standard */
-sparse_bitmap_for_kernel_t* rkp_s_bitmap_ro __rkp_ro = 0;
-sparse_bitmap_for_kernel_t* rkp_s_bitmap_dbl __rkp_ro = 0;
-sparse_bitmap_for_kernel_t* rkp_s_bitmap_buffer __rkp_ro = 0;
-
-static void __init rkp_init(void)
-{
-	rkp_init_data.vmalloc_end = (u64)high_memory;
-	rkp_init_data.init_mm_pgd = (u64)__pa(swapper_pg_dir);
-	rkp_init_data.id_map_pgd = (u64)__pa(idmap_pg_dir);
-	rkp_init_data.zero_pg_addr = (u64)__pa(empty_zero_page);
-#ifdef CONFIG_UNMAP_KERNEL_AT_EL0
-	rkp_init_data.tramp_pgd = (u64)__pa(tramp_pg_dir);
-	rkp_init_data.tramp_valias = (u64)TRAMP_VALIAS;
-#endif
-	uh_call(UH_APP_RKP, RKP_GET_RO_BITMAP, (u64)&rkp_s_bitmap_ro, 0, 0, 0);
-	uh_call(UH_APP_RKP, RKP_GET_DBL_BITMAP, (u64)&rkp_s_bitmap_dbl, 0, 0, 0);
-	uh_call(UH_APP_RKP, RKP_START, (u64)&rkp_init_data, (u64)kimage_voffset, 0, (u64)memstart_addr);
-	rkp_started = 1;
-}
-
-#endif
-
-#ifdef CONFIG_RKP_KDP
-#define VERITY_PARAM_LENGTH 20
-static char verifiedbootstate[VERITY_PARAM_LENGTH];
-int __check_verifiedboot __kdp_ro = 0;
-#ifdef CONFIG_SAMSUNG_PRODUCT_SHIP
-extern int ss_initialized __kdp_ro;
-#endif
-
-static int __init verifiedboot_state_setup(char *str)
-{
-	strlcpy(verifiedbootstate, str, sizeof(verifiedbootstate));
-
-	if(!strncmp(verifiedbootstate, "orange", sizeof("orange")))
-		__check_verifiedboot = 1;
-
-	return 0;
-}
-__setup("androidboot.verifiedbootstate=", verifiedboot_state_setup);
-
-void kdp_init(void)
-{
-	kdp_init_t cred;
-
-	cred.credSize 	= sizeof(struct cred);
-	cred.sp_size	= rkp_get_task_sec_size();
-	cred.pgd_mm 	= offsetof(struct mm_struct,pgd);
-	cred.uid_cred	= offsetof(struct cred,uid);
-	cred.euid_cred	= offsetof(struct cred,euid);
-	cred.gid_cred	= offsetof(struct cred,gid);
-	cred.egid_cred	= offsetof(struct cred,egid);
-
-	cred.bp_pgd_cred 	= offsetof(struct cred,bp_pgd);
-	cred.bp_task_cred 	= offsetof(struct cred,bp_task);
-	cred.type_cred 		= offsetof(struct cred,type);
-	cred.security_cred 	= offsetof(struct cred,security);
-	cred.usage_cred 	= offsetof(struct cred,use_cnt);
-
-	cred.cred_task  	= offsetof(struct task_struct,cred);
-	cred.mm_task 		= offsetof(struct task_struct,mm);
-	cred.pid_task		= offsetof(struct task_struct,pid);
-	cred.rp_task		= offsetof(struct task_struct,real_parent);
-	cred.comm_task 		= offsetof(struct task_struct,comm);
-
-	cred.bp_cred_secptr 	= rkp_get_offset_bp_cred();
-
-	cred.verifiedbootstate = (u64)verifiedbootstate;
-#ifdef CONFIG_SAMSUNG_PRODUCT_SHIP
-	cred.selinux.ss_initialized_va	= (u64)&ss_initialized;
-#endif
-	uh_call(UH_APP_RKP, RKP_KDP_X40, (u64)&cred, 0, 0, 0);
-}
-#endif /* CONFIG_RKP_KDP */
-
 asmlinkage __visible void __init start_kernel(void)
 {
 	char *command_line;
@@ -759,13 +652,6 @@ asmlinkage __visible void __init start_kernel(void)
 	sort_main_extable();
 	trap_init();
 	mm_init();
-
-#ifdef CONFIG_UH_RKP
-	rkp_init();
-#endif
-#ifdef CONFIG_RKP_KDP
-	rkp_cred_enable = 1;
-#endif /*CONFIG_RKP_KDP*/
 
 	ftrace_init();
 
@@ -879,10 +765,6 @@ asmlinkage __visible void __init start_kernel(void)
 		efi_enter_virtual_mode();
 #endif
 	thread_stack_cache_init();
-#ifdef CONFIG_RKP_KDP
-	if (rkp_cred_enable) 
-		kdp_init();
-#endif /*CONFIG_RKP_KDP*/
 	cred_init();
 	fork_init();
 	proc_caches_init();
@@ -1263,11 +1145,6 @@ static int __ref kernel_init(void *unused)
 	ftrace_free_init_mem();
 	free_initmem();
 	mark_readonly();
-#ifndef CONFIG_DEFERRED_INITCALLS
-#ifdef CONFIG_UH_RKP
-	rkp_deferred_init();
-#endif
-#endif
 	system_state = SYSTEM_RUNNING;
 	numa_default_policy();
 
