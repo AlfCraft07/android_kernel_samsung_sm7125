@@ -761,14 +761,7 @@ out:
 	kfree(n);
 	kfree(t);
 
-// [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_ALWAYS_ENFORCE
-#if !defined(CONFIG_RKP_KDP)
-	selinux_enforcing = 1;
-#endif
-#endif
-// ] SEC_SELINUX_PORTING_COMMON
-	if (!selinux_enforcing) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!enforcing_enabled(state))
 		return 0;
 	return -EPERM;
 }
@@ -788,7 +781,7 @@ static int security_compute_validatetrans(struct selinux_state *state,
 	int rc = 0;
 
 
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		return 0;
 
 	read_lock(&state->ss->policy_rwlock);
@@ -888,7 +881,7 @@ int security_bounded_transition(struct selinux_state *state,
 	int index;
 	int rc;
 
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		return 0;
 
 	read_lock(&state->ss->policy_rwlock);
@@ -1048,7 +1041,7 @@ void security_compute_xperms_decision(struct selinux_state *state,
 	memset(xpermd->dontaudit->p, 0, sizeof(xpermd->dontaudit->p));
 
 	read_lock(&state->ss->policy_rwlock);
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		goto allow;
 
 	policydb = &state->ss->policydb;
@@ -1137,7 +1130,7 @@ void security_compute_av(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 	avd_init(state, avd);
 	xperms->len = 0;
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		goto allow;
 
 	policydb = &state->ss->policydb;
@@ -1191,7 +1184,7 @@ void security_compute_av_user(struct selinux_state *state,
 
 	read_lock(&state->ss->policy_rwlock);
 	avd_init(state, avd);
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		goto allow;
 
 	policydb = &state->ss->policydb;
@@ -1321,7 +1314,7 @@ static int security_sid_to_context_core(struct selinux_state *state,
 		*scontext = NULL;
 	*scontext_len  = 0;
 
-	if (!ss_initialized) { // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized) {
 		if (sid <= SECINITSID_NUM) {
 			char *scontextp;
 
@@ -1525,7 +1518,7 @@ static int security_context_to_sid_core(struct selinux_state *state,
 	if (!scontext2)
 		return -ENOMEM;
 
-	if (!ss_initialized) { // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized) {
 		int i;
 
 		for (i = 1; i < SECINITSID_NUM; i++) {
@@ -1655,15 +1648,7 @@ out:
 	kfree(s);
 	kfree(t);
 	kfree(n);
-
-// [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_ALWAYS_ENFORCE
-#if !defined(CONFIG_RKP_KDP)
-	selinux_enforcing = 1;
-#endif
-#endif
-// ] SEC_SELINUX_PORTING_COMMON
-	if (!selinux_enforcing) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!enforcing_enabled(state))
 		return 0;
 	return -EACCES;
 }
@@ -1715,7 +1700,7 @@ static int security_compute_sid(struct selinux_state *state,
 	int rc = 0;
 	bool sock;
 
-	if (!ss_initialized) { // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized) {
 		switch (orig_tclass) {
 		case SECCLASS_PROCESS: /* kernel value */
 			*out_sid = ssid;
@@ -1961,14 +1946,7 @@ static inline int convert_context_handle_invalid_context(
 	char *s;
 	u32 len;
 
-// [ SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_ALWAYS_ENFORCE
-#if !defined(CONFIG_RKP_KDP)
-	selinux_enforcing = 1;
-#endif
-#endif
-// ] SEC_SELINUX_PORTING_COMMON
-	if (!selinux_enforcing) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (enforcing_enabled(state))
 		return -EINVAL;
 
 	if (!context_struct_to_string(policydb, context, &s, &len)) {
@@ -2187,7 +2165,7 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 		goto out;
 	}
 
-	if (!ss_initialized) { // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized) {
 		rc = policydb_read(policydb, fp);
 		if (rc) {
 			kfree(newsidtab);
@@ -2212,11 +2190,7 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 
 		state->ss->sidtab = newsidtab;
 		security_load_policycaps(state);
-#if (defined CONFIG_RKP_KDP && defined CONFIG_SAMSUNG_PRODUCT_SHIP)
-		uh_call(UH_APP_RKP, RKP_KDP_X60, (u64)&ss_initialized, 1, 0, 0);
-#else
-		ss_initialized = 1; // SEC_SELINUX_PORTING_COMMON Change to use RKP
-#endif
+		state->initialized = 1;
 		seqno = ++state->ss->latest_granting;
 		selinux_complete_init();
 		avc_ss_reset(state->avc, seqno);
@@ -2638,7 +2612,7 @@ int security_get_user_sids(struct selinux_state *state,
 	*sids = NULL;
 	*nel = 0;
 
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		goto out;
 
 	read_lock(&state->ss->policy_rwlock);
@@ -3048,7 +3022,7 @@ int security_sid_mls_copy(struct selinux_state *state,
 	int rc;
 
 	rc = 0;
-	if (!ss_initialized || !policydb->mls_enabled) {// SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized || !policydb->mls_enabled) {
 		*new_sid = sid;
 		goto out;
 	}
@@ -3352,7 +3326,7 @@ int selinux_audit_rule_init(u32 field, u32 op, char *rulestr, void **vrule)
 
 	*rule = NULL;
 
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		return -EOPNOTSUPP;
 
 	switch (field) {
@@ -3652,7 +3626,7 @@ int security_netlbl_secattr_to_sid(struct selinux_state *state,
 	struct context *ctx;
 	struct context ctx_new;
 
-	if (!ss_initialized) {// SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized) {
 		*sid = SECSID_NULL;
 		return 0;
 	}
@@ -3719,7 +3693,7 @@ int security_netlbl_sid_to_secattr(struct selinux_state *state,
 	int rc;
 	struct context *ctx;
 
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		return 0;
 
 	read_lock(&state->ss->policy_rwlock);
@@ -3758,7 +3732,7 @@ int security_read_policy(struct selinux_state *state,
 	int rc;
 	struct policy_file fp;
 
-	if (!ss_initialized) // SEC_SELINUX_PORTING_COMMON Change to use RKP
+	if (!state->initialized)
 		return -EINVAL;
 
 	*len = security_policydb_len(state);
