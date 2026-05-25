@@ -165,8 +165,8 @@ jobs:
           make O=out clean mrproper
 
           # 3. Build Base Config (TARGET_KERNEL_CONFIG)
-          echo "--> Generating Base Config: vendor/atoll-perf_defconfig"
-          make O=out vendor/atoll-perf_defconfig
+          echo "--> Generating Base Config: vendor/samsung/sm7125_defconfig"
+          make O=out vendor/samsung/sm7125_defconfig
 
           # 4. Merge Fragment (The 'kernel.mk' Logic)
           echo "--> Merging Fragment: arch/arm64/configs/vendor/samsung/gta4xlve.config"
