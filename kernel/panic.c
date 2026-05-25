@@ -216,7 +216,7 @@ void panic(const char *fmt, ...)
 	trace_kernel_panic(0);
 
 	/*To prevent watchdog reset during panic handling. */
-	emerg_pet_watchdog();
+	// emerg_pet_watchdog();
 
 	/*
 	 * Disable local interrupts. This will prevent panic_smp_self_stop
