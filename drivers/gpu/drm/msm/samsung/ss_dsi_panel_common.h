@@ -60,7 +60,6 @@ Copyright (C) 2012, Samsung Electronics. All rights reserved.
 #include <linux/self_display/self_display.h>
 
 #include "dsi_display.h"
-#include "dsi_defs.h"
 #include "dsi_panel.h"
 #include "sde_kms.h"
 #include "sde_connector.h"

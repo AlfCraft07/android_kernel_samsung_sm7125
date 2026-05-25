@@ -189,7 +189,7 @@ enum bug_trap_type report_bug(unsigned long bugaddr, struct pt_regs *regs)
 		return BUG_TRAP_TYPE_WARN;
 	}
 
-	// sec_debug_store_bug_string(file, line);
+	sec_debug_store_bug_string(file, line);
 
 	printk(KERN_DEFAULT "------------[ cut here ]------------\n");
 

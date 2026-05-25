@@ -216,7 +216,7 @@ void panic(const char *fmt, ...)
 	trace_kernel_panic(0);
 
 	/*To prevent watchdog reset during panic handling. */
-	// emerg_pet_watchdog();
+	emerg_pet_watchdog();
 
 	/*
 	 * Disable local interrupts. This will prevent panic_smp_self_stop
@@ -248,9 +248,9 @@ void panic(const char *fmt, ...)
 	if (old_cpu != PANIC_CPU_INVALID && old_cpu != this_cpu)
 		panic_smp_self_stop();
 
-	// sec_debug_sched_msg("!!panic!!");
+	sec_debug_sched_msg("!!panic!!");
 
-	// sec_debug_sched_msg("!!panic!!");
+	sec_debug_sched_msg("!!panic!!");
 
 	console_verbose();
 	bust_spinlocks(1);
