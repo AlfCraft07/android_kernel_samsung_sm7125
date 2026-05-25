@@ -172,8 +172,8 @@ jobs:
           # We search for the gta4xlve fragment and merge it using the kernel's script
           FRAGMENT="~/runner/work/valeryn_samsung_sm7125_P613/valeryn_samsung_sm7125_P613/arch/arm64/configs/vendor/samsung/gta4xlve.config"
           if [ ! -f $FRAGMENT ]; then
-          fi
              FRAGMENT="~/runner/work/valeryn_samsung_sm7125_P613/valeryn_samsung_sm7125_P613/arch/arm64/configs/gta4xlve.config"
+          fi
           
           if [ -f $FRAGMENT ]; then
              echo "--> Merging Fragment: $FRAGMENT"
