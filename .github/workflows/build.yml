@@ -171,9 +171,7 @@ jobs:
           # 4. Merge Fragment (The 'kernel.mk' Logic)
           # We search for the gta4xlve fragment and merge it using the kernel's script
           FRAGMENT="/../arch/arm64/configs/vendor/samsung/gta4xlve.config"
-          if [ ! -f $FRAGMENT ]; then
-             FRAGMENT="/../arch/arm64/configs/gta4xlve.config"
-          fi
+          if [ ! -f $FRAGMENT ]
           
           if [ -f $FRAGMENT ]; then
              echo "--> Merging Fragment: $FRAGMENT"
