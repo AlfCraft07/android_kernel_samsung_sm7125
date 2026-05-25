@@ -169,21 +169,10 @@ jobs:
           make O=out vendor/atoll-perf_defconfig
 
           # 4. Merge Fragment (The 'kernel.mk' Logic)
-          # We search for the gta4xlve fragment and merge it using the kernel's script
-          FRAGMENT="arch/arm64/configs/vendor/samsung/gta4xlve.config"
-          if [ ! -f $FRAGMENT ]; then
-             FRAGMENT="arch/arm64/configs/gta4xlve.config"
-          fi
-          
-          if [ -f $FRAGMENT ]; then
-             echo "--> Merging Fragment: $FRAGMENT"
+          echo "--> Merging Fragment: arch/arm64/configs/vendor/samsung/gta4xlve.config"
              # This is the exact script Lineage uses to merge configs
-             scripts/kconfig/merge_config.sh -m -O out out/.config $FRAGMENT
+             scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/samsung/gta4xlve.config
              make O=out olddefconfig
-          else
-             echo "!! ERROR: gta4xlve.config fragment not found!"
-             exit 1
-          fi
 
           # 5. Compile (KERNEL_MAKE_CMD)
           # For devices with CONFIG_BUILD_ARM64_DT_OVERLAY=y (overlay mode):
