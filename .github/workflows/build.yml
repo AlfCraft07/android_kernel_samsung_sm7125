@@ -46,64 +46,18 @@ jobs:
             libncurses5-dev libssl-dev rsync zip unzip wget curl ca-certificates \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
 
-      # -----------------------------------------------------------------------
-      # KERNELSU: Using Official Setup Script
-      # -----------------------------------------------------------------------
-      - name: Setup KernelSU-Next
-        run: |
-          # Use official KernelSU-Next setup script for v1.1.1
-          # This is the recommended way per KernelSU-Next documentation
-          echo "=========================================="
-          echo "KernelSU-Next v1.1.1 Setup (Official Script)"
-          echo "=========================================="
-          
-          # Download and run official setup script with v1.1.1 tag
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s v1.1.1
-          
-          # The script automatically:
-          # - Downloads KernelSU-Next v1.1.1
-          # - Sets up kernel directory structure
-          # - Creates proper symlinks
-          # - Calculates version
-          # - Configures build system
-          
-          # Calculate and display version for reference
-          if [ -d "KernelSU" ]; then
-            cd KernelSU
-            KSU_GIT_VERSION=$(git rev-list --count HEAD)
-            KSU_VERSION=$((30000 + KSU_GIT_VERSION + 60))
-            KSU_GIT_TAG=$(git describe --tags --always)
-            
-            echo "Tag: v1.1.1 (stable release)"
-            echo "Commit: $(git rev-parse --short HEAD)"
-            echo "Commit Count: $KSU_GIT_VERSION"
-            echo "Calculated Version: $KSU_VERSION"
-            echo "Git Tag: $KSU_GIT_TAG"
-            echo "Support: Kernel 4.4 - 5.4 (including 4.14)"
-            
-            # Export for later use
-            echo "KSU_VERSION=$KSU_VERSION" >> $GITHUB_ENV
-            echo "KSU_TAG=$KSU_GIT_TAG" >> $GITHUB_ENV
-            
-            cd ..
-          fi
-          
-          echo "=========================================="
-          echo "✓ KernelSU-Next v1.1.1 setup complete (official script)"
-          echo "=========================================="
-
       - name: Setup AnyKernel3
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git ~/AnyKernel3
           cd ~/AnyKernel3
           cat > anykernel.sh << 'EOF'
           #!/sbin/sh
-          # AnyKernel3 Script for GTA4XLVE with KernelSU-Next
+          # AnyKernel3 Script for GTA4XLVE
           
           ## AnyKernel setup
           # begin properties
           properties() { '
-          kernel.string=GTA4XLVE KernelSU-Next
+          kernel.string=GTA4XLVE
           do.devicecheck=0
           do.modules=0
           do.systemless=1
@@ -169,9 +123,9 @@ jobs:
           make O=out vendor/samsung/sm7125_defconfig
 
           # 4. Merge Fragment (The 'kernel.mk' Logic)
-          echo "--> Merging Fragment: arch/arm64/configs/vendor/samsung/gta4xlvewifi.config"
+          echo "--> Merging Fragment: arch/arm64/configs/vendor/gta4xlvewifi_eur_open_defconfig"
              # This is the exact script Lineage uses to merge configs
-             scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/samsung/gta4xlvewifi.config
+             scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/gta4xlvewifi_eur_open_defconfig
              make O=out olddefconfig
 
           # 5. Compile (KERNEL_MAKE_CMD)
