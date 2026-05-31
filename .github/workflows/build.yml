@@ -123,9 +123,9 @@ jobs:
           make O=out vendor/samsung/sm7125_defconfig
 
           # 4. Merge Fragment (The 'kernel.mk' Logic)
-          echo "--> Merging Fragment: arch/arm64/configs/vendor/gta4xlvewifi_eur_open_defconfig"
+          echo "--> Merging Fragment: arch/arm64/configs/vendor/samsung/gta4xlvewifi.config"
              # This is the exact script Lineage uses to merge configs
-             scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/gta4xlvewifi_eur_open_defconfig
+             scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/samsung/gta4xlvewifi.config
              make O=out olddefconfig
 
           # 5. Compile (KERNEL_MAKE_CMD)
