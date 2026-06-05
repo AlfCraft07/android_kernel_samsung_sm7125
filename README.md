@@ -7,7 +7,7 @@
 > Make sure you have build tools/packages installed, else it won't compile properly.
 
 ## Looking for linux readme?
-- [Click here](https://github.com/AlfCraft07/valeryn_samsung_sm7125_p613/blob/main/README)
+- [Click here](https://github.com/AlfCraft07/valeryn_samsung_sm7125_P613/blob/main/README)
 
 ### Features [To be added/Implemented] 
     [✅️ = Done | ❌️ = Not done yet]
