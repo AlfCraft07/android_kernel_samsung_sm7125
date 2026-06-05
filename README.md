@@ -16,9 +16,14 @@
 - KernelSU ❌️
 - Maybe more in future
 
-### Progress
+### Progress (Disclaimer: Kernel is most likely not the issue here)
 - LineageOS boot ✅️
-- One UI 7/8 boot ❌️
+- Stock boot ✅
+- TrebleDroid GSI boot ✅
+- LineageOS GSI boot ❌ (hangs on splash screen)
+- PixelOS GSI boot ✅
+- One UI 6 GSI boot ❌ (hangs on boot animation)
+- One UI 7/8 GSI boot ❌️ (restarts after 12-14 secs)
 
 ### About this Repository:
-- This kernel was created in late May 2026 from the kernel used in the One UI 8 port for the A525F, compiled using a defconfig containing entries for P613 drivers. Thus, this kernel should boot One UI 8 on the tablet, but a proper port has not yet been done.
+- This kernel was compiled in late May 2026 from the kernel source used in the One UI 8 port for the Galaxy A52 4G (SM-A525F), using a defconfig containing entries for P613 drivers. Thus, this kernel should boot One UI 8 on the tablet, but a proper port has not yet been done.
