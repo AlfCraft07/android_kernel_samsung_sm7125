@@ -71,7 +71,6 @@
 #include <linux/pid_namespace.h>
 #include <linux/security.h>
 #include <linux/spinlock.h>
-#include <linux/ratelimit.h>
 
 #include <uapi/linux/android/binder.h>
 #include <uapi/linux/sched/types.h>
@@ -151,22 +150,15 @@ module_param_call(stop_on_user_error, binder_set_stop_on_user_error,
 #define binder_debug(mask, x...) \
 	do { \
 		if (binder_debug_mask & mask) \
-			pr_info_ratelimited(x); \
+			pr_info(x); \
 	} while (0)
 
 #define binder_user_error(x...) \
 	do { \
 		if (binder_debug_mask & BINDER_DEBUG_USER_ERROR) \
-			pr_info_ratelimited(x); \
+			pr_info(x); \
 		if (binder_stop_on_user_error) \
 			binder_stop_on_user_error = 2; \
-	} while (0)
-
-#define binder_set_extended_error(ee, _id, _command, _param) \
-	do { \
-		(ee)->id = _id; \
-		(ee)->command = _command; \
-		(ee)->param = _param; \
 	} while (0)
 
 #define to_flat_binder_object(hdr) \
@@ -505,7 +497,8 @@ struct binder_priority {
  * @requested_threads_started: number binder threads started
  *                        (protected by @inner_lock)
  * @tmp_ref:              temporary reference to indicate proc is in use
- *                        (protected by @inner_lock)
+ *                        (atomic since @proc->inner_lock cannot
+ *                        always be acquired)
  * @default_priority:     default scheduler priority
  *                        (invariant after initialized)
  * @debugfs_entry:        debugfs node
@@ -548,7 +541,7 @@ struct binder_proc {
 	u32 max_threads;
 	int requested_threads;
 	int requested_threads_started;
-	int tmp_ref;
+	atomic_t tmp_ref;
 	struct binder_priority default_priority;
 	struct dentry *debugfs_entry;
 	struct binder_alloc alloc;
@@ -592,8 +585,6 @@ enum {
  *                        (only accessed by this thread)
  * @reply_error:          transaction errors reported by target thread
  *                        (protected by @proc->inner_lock)
- * @ee:                   extended error information from this thread
- *                        (protected by @proc->inner_lock)
  * @wait:                 wait queue for thread work
  * @stats:                per-thread statistics
  *                        (atomics, no lock needed)
@@ -619,7 +610,6 @@ struct binder_thread {
 	bool process_todo;
 	struct binder_error return_error;
 	struct binder_error reply_error;
-	struct binder_extended_error ee;
 	wait_queue_head_t wait;
 	struct binder_stats stats;
 	atomic_t tmp_ref;
@@ -2137,9 +2127,9 @@ static void binder_thread_dec_tmpref(struct binder_thread *thread)
 static void binder_proc_dec_tmpref(struct binder_proc *proc)
 {
 	binder_inner_proc_lock(proc);
-	proc->tmp_ref--;
+	atomic_dec(&proc->tmp_ref);
 	if (proc->is_dead && RB_EMPTY_ROOT(&proc->threads) &&
-			!proc->tmp_ref) {
+			!atomic_read(&proc->tmp_ref)) {
 		binder_inner_proc_unlock(proc);
 		binder_free_proc(proc);
 		return;
@@ -2201,9 +2191,14 @@ static struct binder_thread *binder_get_txn_from_and_acq_inner(
 
 static void binder_free_transaction(struct binder_transaction *t)
 {
-	struct binder_proc *target_proc = t->to_proc;
+	struct binder_proc *target_proc;
 
+	spin_lock(&t->lock);
+	target_proc = t->to_proc;
 	if (target_proc) {
+		atomic_inc(&target_proc->tmp_ref);
+		spin_unlock(&t->lock);
+
 		binder_inner_proc_lock(target_proc);
 		target_proc->outstanding_txns--;
 		BUG_ON(target_proc->outstanding_txns < 0);
@@ -2212,11 +2207,14 @@ static void binder_free_transaction(struct binder_transaction *t)
 		if (t->buffer)
 			t->buffer->transaction = NULL;
 		binder_inner_proc_unlock(target_proc);
+		binder_proc_dec_tmpref(target_proc);
+	} else {
+		/*
+		 * If the transaction has no target_proc, then
+		 * t->buffer->transaction * has already been cleared.
+		 */
+		spin_unlock(&t->lock);
 	}
-	/*
-	 * If the transaction has no target_proc, then
-	 * t->buffer->transaction has already been cleared.
-	 */
 	kfree(t);
 	binder_stats_deleted(BINDER_STAT_TRANSACTION);
 }
@@ -3135,31 +3133,13 @@ static struct binder_node *binder_get_node_refs_for_txn(
 		target_node = node;
 		binder_inc_node_nilocked(node, 1, 0, NULL);
 		binder_inc_node_tmpref_ilocked(node);
-		node->proc->tmp_ref++;
+		atomic_inc(&node->proc->tmp_ref);
 		*procp = node->proc;
 	} else
 		*error = BR_DEAD_REPLY;
 	binder_node_inner_unlock(node);
 
 	return target_node;
-}
-
-static void binder_set_txn_from_error(struct binder_transaction *t, int id,
-				      uint32_t command, int32_t param)
-{
-	struct binder_thread *from = binder_get_txn_from_and_acq_inner(t);
-
-	if (!from) {
-		/* annotation for sparse */
-		__release(&from->proc->inner_lock);
-		return;
-	}
-
-	/* don't override existing errors */
-	if (from->ee.command == BR_OK)
-		binder_set_extended_error(&from->ee, id, command, param);
-	binder_inner_proc_unlock(from->proc);
-	binder_thread_dec_tmpref(from);
 }
 
 static void binder_transaction(struct binder_proc *proc,
@@ -3199,10 +3179,6 @@ static void binder_transaction(struct binder_proc *proc,
 	e->data_size = tr->data_size;
 	e->offsets_size = tr->offsets_size;
 	e->context_name = proc->context->name;
-
-	binder_inner_proc_lock(proc);
-	binder_set_extended_error(&thread->ee, t_debug_id, BR_OK, 0);
-	binder_inner_proc_unlock(proc);
 
 	if (reply) {
 		binder_inner_proc_lock(proc);
@@ -3255,7 +3231,7 @@ static void binder_transaction(struct binder_proc *proc,
 			goto err_dead_binder;
 		}
 		target_proc = target_thread->proc;
-		target_proc->tmp_ref++;
+		atomic_inc(&target_proc->tmp_ref);
 		binder_inner_proc_unlock(target_thread->proc);
 	} else {
 		if (tr->target.handle) {
@@ -3442,28 +3418,9 @@ static void binder_transaction(struct binder_proc *proc,
 	if (target_node && target_node->txn_security_ctx) {
 		u32 secid;
 		size_t added_size;
-		int max_retries = 100;
 
 		security_cred_getsecid(proc->cred, &secid);
- retry_alloc:
 		ret = security_secid_to_secctx(secid, &secctx, &secctx_sz);
-		if (ret == -ENOMEM && max_retries-- > 0) {
-			struct page *dummy_page;
-
-			/*
-			 * security_secid_to_secctx() can fail because of a
-			 * GFP_ATOMIC allocation in which case -ENOMEM is
-			 * returned. This needs to be retried, but there is
-			 * currently no way to tell userspace to retry so we
-			 * do it here. We make sure there is still available
-			 * memory first and then retry.
-			 */
-			dummy_page = alloc_page(GFP_KERNEL);
-			if (dummy_page) {
-				__free_page(dummy_page);
-				goto retry_alloc;
-			}
-		}
 		if (ret) {
 			return_error = BR_FAILED_REPLY;
 			return_error_param = ret;
@@ -3886,16 +3843,10 @@ err_invalid_target_handle:
 	BUG_ON(thread->return_error.cmd != BR_OK);
 	if (in_reply_to) {
 		binder_restore_priority(current, in_reply_to->saved_priority);
-		binder_set_txn_from_error(in_reply_to, t_debug_id,
-				return_error, return_error_param);
 		thread->return_error.cmd = BR_TRANSACTION_COMPLETE;
 		binder_enqueue_thread_work(thread, &thread->return_error.work);
 		binder_send_failed_reply(in_reply_to, return_error);
 	} else {
-		binder_inner_proc_lock(proc);
-		binder_set_extended_error(&thread->ee, t_debug_id,
-				return_error, return_error_param);
-		binder_inner_proc_unlock(proc);
 		thread->return_error.cmd = return_error;
 		binder_enqueue_thread_work(thread, &thread->return_error.work);
 	}
@@ -3944,17 +3895,10 @@ static int binder_thread_write(struct binder_proc *proc,
 				struct binder_node *ctx_mgr_node;
 				mutex_lock(&context->context_mgr_node_lock);
 				ctx_mgr_node = context->binder_context_mgr_node;
-				if (ctx_mgr_node) {
-					if (ctx_mgr_node->proc == proc) {
-						binder_user_error("%d:%d context manager tried to acquire desc 0\n",
-								  proc->pid, thread->pid);
-						mutex_unlock(&context->context_mgr_node_lock);
-						return -EINVAL;
-					}
+				if (ctx_mgr_node)
 					ret = binder_inc_ref_for_node(
 							proc, ctx_mgr_node,
 							strong, NULL, &rdata);
-				}
 				mutex_unlock(&context->context_mgr_node_lock);
 			}
 			if (ret)
@@ -4916,7 +4860,6 @@ static struct binder_thread *binder_get_thread_ilocked(
 	thread->return_error.cmd = BR_OK;
 	thread->reply_error.work.type = BINDER_WORK_RETURN_ERROR;
 	thread->reply_error.cmd = BR_OK;
-	thread->ee.command = BR_OK;
 	INIT_LIST_HEAD(&new_thread->waiting_thread_node);
 	return thread;
 }
@@ -4986,7 +4929,7 @@ static int binder_thread_release(struct binder_proc *proc,
 	 * The corresponding dec is when we actually
 	 * free the thread in binder_free_thread()
 	 */
-	proc->tmp_ref++;
+	atomic_inc(&proc->tmp_ref);
 	/*
 	 * take a ref on this thread to ensure it
 	 * survives while we are releasing it
@@ -5349,22 +5292,6 @@ static int binder_ioctl_get_freezer_info(
 	return 0;
 }
 
-static int binder_ioctl_get_extended_error(struct binder_thread *thread,
-					   void __user *ubuf)
-{
-	struct binder_extended_error ee;
-
-	binder_inner_proc_lock(thread->proc);
-	ee = thread->ee;
-	binder_set_extended_error(&thread->ee, 0, BR_OK, 0);
-	binder_inner_proc_unlock(thread->proc);
-
-	if (copy_to_user(ubuf, &ee, sizeof(ee)))
-		return -EFAULT;
-
-	return 0;
-}
-
 static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	int ret;
@@ -5522,7 +5449,7 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 				continue;
 
 			binder_inner_proc_lock(target_proc);
-			target_proc->tmp_ref++;
+			atomic_inc(&target_proc->tmp_ref);
 			binder_inner_proc_unlock(target_proc);
 
 			target_procs[i++] = target_proc;
@@ -5573,11 +5500,6 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		binder_inner_proc_unlock(proc);
 		break;
 	}
-	case BINDER_GET_EXTENDED_ERROR:
-		ret = binder_ioctl_get_extended_error(thread, ubuf);
-		if (ret < 0)
-			goto err;
-		break;
 	default:
 		ret = -EINVAL;
 		goto err;
@@ -5688,6 +5610,7 @@ static int binder_open(struct inode *nodp, struct file *filp)
 	dbitmap_init(&proc->dmap);
 	spin_lock_init(&proc->inner_lock);
 	spin_lock_init(&proc->outer_lock);
+	atomic_set(&proc->tmp_ref, 0);
 	get_task_struct(current->group_leader);
 	proc->tsk = current->group_leader;
 	mutex_init(&proc->files_lock);
@@ -5912,7 +5835,7 @@ static void binder_deferred_release(struct binder_proc *proc)
 	 * Make sure proc stays alive after we
 	 * remove all the threads
 	 */
-	proc->tmp_ref++;
+	atomic_inc(&proc->tmp_ref);
 
 	proc->is_dead = true;
 	proc->is_frozen = false;
