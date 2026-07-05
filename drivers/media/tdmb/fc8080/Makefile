@@ -15,4 +15,4 @@ obj-y += fci_tun.o
 obj-y += fic.o
 obj-y += ficdecoder.o
 
-ccflags-y += -Idrivers/media/tdmb
+ccflags-y += -I$(srctree)/drivers/media/tdmb

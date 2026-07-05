@@ -89,7 +89,7 @@ ifdef CONFIG_TAS25XX_ALGO
 endif
 endif
 
-LINUX_INC +=	-Iinclude/linux
+LINUX_INC +=	-I$(srctree)/include/linux
 
 INCS +=		$(COMMON_INC) \
 		$(UAPI_INC)

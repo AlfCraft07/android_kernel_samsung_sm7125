@@ -2008,7 +2008,7 @@ ifeq ($(CONFIG_CNSS_QCA6750), y)
 TARGET_INC +=	-I$(WLAN_FW_API)/hw/qca6750/v1
 endif
 
-LINUX_INC :=	-Iinclude
+LINUX_INC :=	-I$(srctree)/include
 
 INCS :=		$(HDD_INC) \
 		$(SYNC_INC) \

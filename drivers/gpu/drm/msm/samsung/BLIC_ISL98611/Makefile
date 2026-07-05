@@ -1,9 +1,9 @@
 #
 # backlight object
 #
-ccflags-y := -Iinclude/drm -Idrivers/gpu/drm/msm -Idrivers/gpu/drm/msm/dsi-staging
-ccflags-y += -Idrivers/gpu/drm/msm/sde
-ccflags-y += -Idrivers/gpu/drm/msm/samsung
+ccflags-y := -I$(srctree)/include/drm -I$(srctree)/drivers/gpu/drm/msm -I$(srctree)/drivers/gpu/drm/msm/dsi-staging
+ccflags-y += -I$(srctree)/drivers/gpu/drm/msm/sde
+ccflags-y += -I$(srctree)/drivers/gpu/drm/msm/samsung
 
 obj-y  += isl98611-backlight.o
 

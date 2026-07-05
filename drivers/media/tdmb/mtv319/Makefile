@@ -5,4 +5,4 @@ obj-y  += mtv319_ficdec.o
 obj-y  += mtv319_tdmb.o
 obj-y  += mtv319_cifdec.o
 
-ccflags-y += -Idrivers/media/tdmb
+ccflags-y += -I$(srctree)/drivers/media/tdmb

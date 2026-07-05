@@ -3,9 +3,9 @@
 # namd : ss_dsi_panel_"DDI NAME"_"PANEL NAME".c
 #
 
-ccflags-y := -Iinclude/drm -Idrivers/gpu/drm/msm -Idrivers/gpu/drm/msm/dsi-staging
-ccflags-y += -Idrivers/gpu/drm/msm/sde
-ccflags-y += -Idrivers/gpu/drm/msm/samsung
+ccflags-y := -I$(srctree)/include/drm -I$(srctree)/drivers/gpu/drm/msm -I$(srctree)/drivers/gpu/drm/msm/dsi-staging
+ccflags-y += -I$(srctree)/drivers/gpu/drm/msm/sde
+ccflags-y += -I$(srctree)/drivers/gpu/drm/msm/samsung
 
 obj-y  += ss_dsi_panel_S6E3HA9_AMB611WE01.o
 obj-y  += ss_dsi_smart_dimming_S6E3HA9_AMB611WE01.o

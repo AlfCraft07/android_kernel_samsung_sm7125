@@ -1,5 +1,5 @@
 
-ccflags-y := -Iinclude/drm -Idrivers/gpu/drm/msm -Idrivers/gpu/drm/msm/dsi-staging -Idrivers/gpu/drm/msm/dp
+ccflags-y := -I$(srctree)/include/drm -I$(srctree)/drivers/gpu/drm/msm -I$(srctree)/drivers/gpu/drm/msm/dsi-staging -I$(srctree)/drivers/gpu/drm/msm/dp
 ccflags-y += -I$(srctree)/drivers/gpu/drm/msm
 ccflags-y += -I$(srctree)/drivers/gpu/drm/msm/sde
 ccflags-y += -I$(srctree)/drivers/clk/qcom

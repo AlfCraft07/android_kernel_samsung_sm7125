@@ -9,7 +9,7 @@ ccflags-y += -I $(srctree)/drivers/gpu/drm/msm/hdmi
 ccflags-$(CONFIG_DRM_SDE_SHD) += -I $(srctree)/drivers/gpu/drm/msm/shd
 ccflags-$(CONFIG_DRM_SDE_SHP) += -I $(srctree)/drivers/gpu/drm/msm/shp
 
-ccflags-$(CONFIG_DISPLAY_SAMSUNG) += -Idrivers/gpu/drm/msm/samsung
+ccflags-$(CONFIG_DISPLAY_SAMSUNG) += -I$(srctree)/drivers/gpu/drm/msm/samsung
 
 ifeq ($(CONFIG_DISPLAY_SAMSUNG_LEGO),y)
 ccflags-y += -I$(srctree)/include/drm
