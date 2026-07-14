@@ -1,0 +1,233 @@
+name: Galaxy A52 (SM-A525F) Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "copilot/debug-kernelsu-hooks" ]
+
+jobs:
+  build:
+    name: Build Kernel (LineageOS Logic)
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      # -----------------------------------------------------------------------
+      # CACHING: Saves time by not re-downloading Clang every run
+      # -----------------------------------------------------------------------
+      - name: Cache Proton Clang
+        id: cache-clang
+        uses: actions/cache@v4
+        with:
+          path: ~/toolchains/clang
+          key: ${{ runner.os }}-proton-clang-v1
+
+      - name: Setup Proton Clang
+        if: steps.cache-clang.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/toolchains
+          echo "Cloning Proton Clang..."
+          git clone https://github.com/kdrag0n/proton-clang.git --depth=1 ~/toolchains/clang
+
+      # -----------------------------------------------------------------------
+      # DEPENDENCIES: Standard build tools required by kernel.mk
+      # -----------------------------------------------------------------------
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache cpio flex git kmod \
+            libncurses5-dev libssl-dev rsync zip unzip wget curl ca-certificates \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
+
+      - name: Setup AnyKernel3
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git ~/AnyKernel3
+          cd ~/AnyKernel3
+          cat > anykernel.sh << 'EOF'
+          #!/sbin/sh
+          # AnyKernel3 Script for A52Q
+          
+          ## AnyKernel setup
+          # begin properties
+          properties() { '
+          kernel.string=Legion Kernel for atoll platform - Built for a52q (SM-A525F)
+          do.devicecheck=0
+          do.modules=0
+          do.systemless=1
+          do.cleanup=1
+          do.cleanuponabort=0
+          device.name1=a52q
+          device.name2=a52q
+          device.name3=SM-A525F
+          device.name4=a52q
+          supported.versions=11-16
+          supported.patchlevels=
+          '; } # end properties
+          
+          ## AnyKernel boot install
+          # begin attributes
+          block=/dev/block/bootdevice/by-name/boot;
+          is_slot_device=0;
+          ramdisk_compression=auto;
+          patch_vbmeta_flag=auto;
+          
+          # boot header version 2 for this device
+          boot_img_hdr_ver=2
+          # end attributes
+          
+          ## AnyKernel methods (DO NOT CHANGE)
+          # import patching functions/variables - see for reference
+          . tools/ak3-core.sh;
+          
+          ## AnyKernel boot install
+          split_boot; # use split_boot to extract ramdisk and kernel
+          
+          # Install kernel image
+          flash_boot;
+          ## end boot install
+          EOF
+          chmod +x anykernel.sh
+
+      # -----------------------------------------------------------------------
+      # BUILD LOGIC: Extracted directly from LineageOS kernel.mk
+      # -----------------------------------------------------------------------
+      - name: Compile Kernel
+        run: |
+          # 1. Setup Environment Variables (mimicking BoardConfig.mk)
+          export PATH=~/toolchains/clang/bin:$PATH
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CC=clang
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CROSS_COMPILE64=aarch64-linux-gnu-
+          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+          export CLANG_TRIPLE=aarch64-linux-gnu-
+          
+          # Flags found in kernel.mk
+          export LLVM=1
+          export LLVM_IAS=1
+          
+          # 2. Clean
+          mkdir -p out
+          make O=out clean mrproper
+
+          # 3. Build Base Config (TARGET_KERNEL_CONFIG)
+          echo "--> Generating Base Config: vendor/samsung/sm7125_defconfig"
+          make O=out vendor/samsung/sm7125_defconfig
+
+          # 4. Merge Fragment (The 'kernel.mk' Logic)
+          echo "--> Merging Fragment: arch/arm64/configs/vendor/samsung/a52q.config"
+             # This is the exact script Lineage uses to merge configs
+             scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/samsung/a52q.config
+             make O=out olddefconfig
+
+          # 5. Compile (KERNEL_MAKE_CMD)
+          # For devices with CONFIG_BUILD_ARM64_DT_OVERLAY=y (overlay mode):
+          # - Build Image.gz (not Image.gz-dtb) to avoid dtbs dependency
+          # - Image.gz-dtb depends on 'dtbs' target which tries to build overlays
+          # - Overlays are applied by bootloader at runtime, not appended to kernel
+          # - This follows LineageOS methodology for overlay-enabled devices
+          
+          # Set KernelSU version explicitly as backup
+          export KSU_VERSION="${KSU_VERSION:-32942}"
+          export KCFLAGS="-DKSU_VERSION=$KSU_VERSION"
+          
+          echo "--> Building kernel with KernelSU version: $KSU_VERSION"
+          echo "--> Compiling Image.gz..."
+          set -o pipefail
+          make O=out -j$(nproc) Image.gz 2>&1 | tee build.log
+          BUILD_STATUS=$?
+          
+          if [ $BUILD_STATUS -ne 0 ]; then
+            echo "Build failed with status $BUILD_STATUS"
+            echo "Last 100 lines of build log:"
+            tail -100 build.log
+            exit $BUILD_STATUS
+          fi
+
+      # -----------------------------------------------------------------------
+      # PACKAGING: AnyKernel3
+      # -----------------------------------------------------------------------
+      - name: Create Flashable ZIP
+        run: |
+          cd ~/AnyKernel3
+          rm -rf .git* README.md
+          
+          # Create custom README for the ZIP
+          cat > README.md << 'EOF'
+          # GTA4XLVE KernelSU Kernel
+          
+          ## What's Included
+          - Custom kernel with KernelSU-Next integration
+          - Image.gz - Kernel image for overlay-enabled device
+          - AnyKernel3 flasher script
+          
+          ## How to Flash
+          
+          ### LineageOS Users (No TWRP needed!)
+          1. Boot into LineageOS Recovery (Vol Up + Power)
+          2. Navigate: Apply update → Apply from ADB
+          3. On PC: `adb sideload gta4xlve-ksun-YYYYMMDD.zip`
+          4. Reboot and enjoy!
+          
+          ### TWRP/OrangeFox Users
+          1. Boot into TWRP/OrangeFox recovery
+          2. Flash this ZIP file
+          3. Reboot and enjoy!
+          
+          ## After Flashing
+          - Install KernelSU Manager from: https://github.com/tiann/KernelSU/releases
+          - Verify installation in the app
+          
+          ## Device Compatibility
+          - Samsung Galaxy Tab S6 Lite (SM-P613), Galaxy A52 4G (SM-A525F), Galaxy A72 4G (SM-A725F)
+          - Models: gta4xlve, a52q, a72q
+          - Android 11-16 / LineageOS 18-23
+          
+          ## Credits
+          - @IamKavy47 for the script
+          - @frstprjkt for the kernel
+          
+          ---
+          Built with ❤️ for GTA4XLVE community
+          EOF
+          
+          # Copy Artifacts
+          # For overlay-enabled devices, use Image.gz (overlays applied by bootloader)
+          if [ -f $GITHUB_WORKSPACE/out/arch/arm64/boot/Image.gz ]; then
+             cp $GITHUB_WORKSPACE/out/arch/arm64/boot/Image.gz .
+             echo "✓ Copied Image.gz"
+          else
+             echo "Build Failed: Image.gz not found"
+             exit 1
+          fi
+          
+          # Verify package contents
+          echo "Package contents:"
+          ls -lah
+          
+          # Create ZIP
+          ZIPNAME="gta4xlve-ksun-$(date +%Y%m%d).zip"
+          zip -r9 $GITHUB_WORKSPACE/$ZIPNAME *
+          echo "✓ Created $ZIPNAME"
+          echo "ZIPNAME=$ZIPNAME" >> $GITHUB_ENV
+
+      - name: Upload Flashable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernelsu-flashable-zip
+          path: ${{ env.ZIPNAME }}
+
+      - name: Upload Build Log (Debug)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log

@@ -1,4 +1,4 @@
-name: LineageOS Style Kernel Build
+name: Galaxy Tab S6 Lite 2022 (SM-P613/SM-P619) Build
 
 on:
   workflow_dispatch:
@@ -57,7 +57,7 @@ jobs:
           ## AnyKernel setup
           # begin properties
           properties() { '
-          kernel.string=GTA4XLVE
+          kernel.string=Legion Kernel for atoll platform - Built for gta4xlveu (SM-P613/SM-P619)
           do.devicecheck=0
           do.modules=0
           do.systemless=1
@@ -123,7 +123,7 @@ jobs:
           make O=out vendor/samsung/sm7125_defconfig
 
           # 4. Merge Fragment (The 'kernel.mk' Logic)
-          echo "--> Merging Fragment: arch/arm64/configs/vendor/samsung/gta4xlvewifi.config"
+          echo "--> Merging Fragment: arch/arm64/configs/vendor/samsung/gta4xlve.config"
              # This is the exact script Lineage uses to merge configs
              scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/samsung/gta4xlve.config
              make O=out olddefconfig
