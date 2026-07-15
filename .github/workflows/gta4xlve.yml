@@ -174,7 +174,7 @@ jobs:
           ### LineageOS Users (No TWRP needed!)
           1. Boot into LineageOS Recovery (Vol Up + Power)
           2. Navigate: Apply update → Apply from ADB
-          3. On PC: `adb sideload gta4xlve-ksun-YYYYMMDD.zip`
+          3. On PC: `adb sideload legion-gta4xlve-YYYYMMDD.zip`
           4. Reboot and enjoy!
           
           ### TWRP/OrangeFox Users
@@ -193,10 +193,9 @@ jobs:
           
           ## Credits
           - @IamKavy47 for the script
-          - @frstprjkt for the kernel
+          - @frostg-012 for the kernel
           
           ---
-          Built with ❤️ for GTA4XLVE community
           EOF
           
           # Copy Artifacts
@@ -214,7 +213,7 @@ jobs:
           ls -lah
           
           # Create ZIP
-          ZIPNAME="gta4xlve-ksun-$(date +%Y%m%d).zip"
+          ZIPNAME="legion-gta4xlve-$(date +%Y%m%d).zip"
           zip -r9 $GITHUB_WORKSPACE/$ZIPNAME *
           echo "✓ Created $ZIPNAME"
           echo "ZIPNAME=$ZIPNAME" >> $GITHUB_ENV
@@ -222,7 +221,7 @@ jobs:
       - name: Upload Flashable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: kernelsu-flashable-zip
+          name: gta4xlve
           path: ${{ env.ZIPNAME }}
 
       - name: Upload Build Log (Debug)

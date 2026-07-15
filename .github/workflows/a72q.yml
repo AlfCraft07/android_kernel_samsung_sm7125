@@ -52,7 +52,7 @@ jobs:
           cd ~/AnyKernel3
           cat > anykernel.sh << 'EOF'
           #!/sbin/sh
-          # AnyKernel3 Script for A52Q
+          # AnyKernel3 Script for A72Q
           
           ## AnyKernel setup
           # begin properties
@@ -135,10 +135,6 @@ jobs:
           # - Overlays are applied by bootloader at runtime, not appended to kernel
           # - This follows LineageOS methodology for overlay-enabled devices
           
-          # Set KernelSU version explicitly as backup
-          export KSU_VERSION="${KSU_VERSION:-32942}"
-          export KCFLAGS="-DKSU_VERSION=$KSU_VERSION"
-          
           echo "--> Building kernel with KernelSU version: $KSU_VERSION"
           echo "--> Compiling Image.gz..."
           set -o pipefail
@@ -162,10 +158,10 @@ jobs:
           
           # Create custom README for the ZIP
           cat > README.md << 'EOF'
-          # GTA4XLVE KernelSU Kernel
+          # Legion Kernel for atoll
           
           ## What's Included
-          - Custom kernel with KernelSU-Next integration
+          - Custom kernel
           - Image.gz - Kernel image for overlay-enabled device
           - AnyKernel3 flasher script
           
@@ -174,17 +170,13 @@ jobs:
           ### LineageOS Users (No TWRP needed!)
           1. Boot into LineageOS Recovery (Vol Up + Power)
           2. Navigate: Apply update → Apply from ADB
-          3. On PC: `adb sideload gta4xlve-ksun-YYYYMMDD.zip`
+          3. On PC: `adb sideload legion-a72q-YYYYMMDD.zip`
           4. Reboot and enjoy!
           
           ### TWRP/OrangeFox Users
           1. Boot into TWRP/OrangeFox recovery
           2. Flash this ZIP file
           3. Reboot and enjoy!
-          
-          ## After Flashing
-          - Install KernelSU Manager from: https://github.com/tiann/KernelSU/releases
-          - Verify installation in the app
           
           ## Device Compatibility
           - Samsung Galaxy Tab S6 Lite (SM-P613), Galaxy A52 4G (SM-A525F), Galaxy A72 4G (SM-A725F)
@@ -193,10 +185,9 @@ jobs:
           
           ## Credits
           - @IamKavy47 for the script
-          - @frstprjkt for the kernel
+          - @frostg-012 for the kernel
           
           ---
-          Built with ❤️ for GTA4XLVE community
           EOF
           
           # Copy Artifacts
@@ -214,7 +205,7 @@ jobs:
           ls -lah
           
           # Create ZIP
-          ZIPNAME="gta4xlve-ksun-$(date +%Y%m%d).zip"
+          ZIPNAME="legion-a72q-$(date +%Y%m%d).zip"
           zip -r9 $GITHUB_WORKSPACE/$ZIPNAME *
           echo "✓ Created $ZIPNAME"
           echo "ZIPNAME=$ZIPNAME" >> $GITHUB_ENV
@@ -222,7 +213,7 @@ jobs:
       - name: Upload Flashable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: kernelsu-flashable-zip
+          name: a72q
           path: ${{ env.ZIPNAME }}
 
       - name: Upload Build Log (Debug)
