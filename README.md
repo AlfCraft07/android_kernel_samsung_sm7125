@@ -33,5 +33,11 @@
 - One UI 8 port boot ✅️, minor issues
 - One UI 8.5 ROM port boot ✅, but negative amount of internal storage is shown and setup won't load on either QSSI or ESSI bases.
 
+### Known issues
+- a52q: none so far
+- a72q: none so far
+- gta4xlvewifi: broken touchscreen and OTG
+- gta4xlve: none so far
+
 ### About this Repository:
 - This kernel was compiled in late May 2026 from the kernel source used in the One UI 8 port for the Galaxy A52 4G (SM-A525F), using a defconfig containing entries for P613 drivers. It has also recently been proven capable of booting OneUI 8 with minor bugs, and 8.5 albeit with critical issues most likely related to the ROM itself.
