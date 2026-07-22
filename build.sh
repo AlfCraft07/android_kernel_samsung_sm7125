@@ -34,7 +34,7 @@ build_boot() {
     DTB_OUT="$(pwd)/out/arch/arm64/boot/dts/qcom/atoll-ab-idp.dtb"
     MONTH="$(date +%Y-%m)"
 
-    wget -O stock_boot.img https://raw.githubusercontent.com/frstprjkt/boot_samsung_sm7125/refs/heads/main/"$DEVICE_NAME"-boot.img
+    wget -O stock_boot.img https://raw.githubusercontent.com/AlfCraft07/boot_samsung_sm7125/refs/heads/main/"$DEVICE_NAME"-boot.img
     $MAGISKBOOT unpack -h stock_boot.img
     sed -i "s|^os_patch_level=.*|os_patch_level=$MONTH|" header
     cp $OUT_KERNEL Image
