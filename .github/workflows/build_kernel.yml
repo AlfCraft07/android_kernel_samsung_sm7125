@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        target: [a52q, a72q]
+        target: [a52q, a72q, gta4xlvewifi, gta4xlve]
 
     steps:
       # 1. Checkout repository with submodules (shallow clone)
