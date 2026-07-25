@@ -48,7 +48,7 @@ jobs:
 
       - name: Setup AnyKernel3
         run: |
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git ~/AnyKernel3
+          git clone --depth=1 https://github.com/AlfCraft07/AnyKernel3.git ~/AnyKernel3
           cd ~/AnyKernel3
           cat > anykernel.sh << 'EOF'
           #!/sbin/sh
