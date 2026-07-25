@@ -66,6 +66,10 @@
 #include <linux/usb/typec/manager/usb_typec_manager_notifier.h>
 #endif
 
+#if defined(CONFIG_DRM)
+#include <linux/msm_drm_notify.h>
+#endif
+
 #define HIMAX_DRIVER_VER "2.0.0.28_ABCD1234_01"
 
 #define FLASH_DUMP_FILE "/sdcard/HX_Flash_Dump.bin"
@@ -413,6 +417,7 @@ struct himax_ts_data {
 
 	uint8_t glove_enabled;
 	bool aot_enabled;
+	bool aot_enabled_suspend;
 	int prox_power_off;
 	bool cover_closed;
 
@@ -469,6 +474,10 @@ struct himax_ts_data {
 
 #if IS_ENABLED(CONFIG_INPUT_SEC_NOTIFIER_LEGO)
 	struct notifier_block himax_input_nb;
+#endif
+
+#if defined(CONFIG_DRM)
+	struct notifier_block fb_notif;
 #endif
 
 	struct workqueue_struct *flash_wq;
@@ -628,5 +637,9 @@ int himax_set_ap_change_mode(int mode, int enable);
 #if defined(HX_USB_DETECT_GLOBAL)
 void himax_cable_detect_func(bool force_renew);
 extern bool USB_detect_flag;
+#endif
+
+#if defined(CONFIG_DRM)
+int himax_fb_register(struct himax_ts_data *ts);
 #endif
 #endif

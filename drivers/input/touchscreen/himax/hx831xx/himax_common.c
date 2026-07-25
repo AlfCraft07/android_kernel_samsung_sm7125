@@ -778,6 +778,12 @@ int himax_input_register(struct himax_ts_data *ts, struct input_dev *input_dev, 
 		return -ENODEV;
 	}
 
+#if defined(CONFIG_DRM)
+	ret = himax_fb_register(ts);
+	if (ret)
+		return ret;
+#endif
+
 	set_bit(EV_SYN, input_dev->evbit);
 	set_bit(EV_ABS, input_dev->evbit);
 	set_bit(EV_KEY, input_dev->evbit);
@@ -2701,6 +2707,51 @@ UPDATE_FW:
 }
 #endif
 
+#if defined(CONFIG_DRM)
+int drm_notifier_callback(struct notifier_block *self,
+                unsigned long event, void *data)
+{
+    struct msm_drm_notifier *evdata = data;
+    int *blank;
+    struct himax_ts_data *ts =
+        container_of(self, struct himax_ts_data, fb_notif);
+
+    if (!evdata || (evdata->id != 0))
+        return 0;
+
+    D("DRM  %s\n", __func__);
+
+    blank = evdata->data;
+    switch (*blank) {
+        case MSM_DRM_BLANK_POWERDOWN:
+            if (!ts->initialized)
+                return -ECANCELED;
+            D("DRM powerdown");
+            himax_chip_common_suspend(ts);
+            break;
+        case MSM_DRM_BLANK_UNBLANK:
+            D("DRM unblank");
+            himax_chip_common_resume(ts);
+            break;
+    }
+
+    return 0;
+}
+
+int himax_fb_register(struct himax_ts_data *ts)
+{
+    int ret = 0;
+
+    D(" %s in\n", __func__);
+    ts->fb_notif.notifier_call = drm_notifier_callback;
+    ret = msm_drm_register_client(&ts->fb_notif);
+    if (ret)
+        E(" Unable to register fb_notifier: %d\n", ret);
+
+    return ret;
+}
+#endif
+
 #ifndef HX_ZERO_FLASH
 static int hx_chk_flash_sts(uint32_t size)
 {
@@ -3342,6 +3393,19 @@ error:
 	return ret;
 }
 
+static void himax_chip_common_set_aot_enabled(struct himax_ts_data *ts, bool enabled, bool suspending)
+{
+	I("%s: Configuring AOT (enabled: %d)\n", __func__, enabled);
+
+	ts->SMWP_enable = !!enabled;
+	ts->aot_enabled = !!enabled;
+	ts->gesture_cust_en[0] = !!enabled;
+	g_core_fp.fp_set_SMWP_enable(ts->SMWP_enable, ts->suspended);
+
+	himax_ctrl_lcd_regulators(ts, suspending);
+	himax_ctrl_lcd_reset_regulator(ts, suspending);
+}
+
 int himax_chip_common_suspend(struct himax_ts_data *ts)
 {
 	mutex_lock(&ts->device_lock);
@@ -3353,6 +3417,7 @@ int himax_chip_common_suspend(struct himax_ts_data *ts)
 		I("%s: Already suspended. Skipped.\n", __func__);
 		goto END;
 	} else {
+		himax_chip_common_set_aot_enabled(ts, ts->aot_enabled_suspend, true);
 		ts->suspended = true;
 		I("%s: enter\n", __func__);
 	}
@@ -3382,9 +3447,6 @@ int himax_chip_common_suspend(struct himax_ts_data *ts)
 #endif
 
 		atomic_set(&ts->suspend_mode, HIMAX_STATE_LPM);
-
-		himax_ctrl_lcd_regulators(ts, true);
-		himax_ctrl_lcd_reset_regulator(ts, true);
 
 		ts->pre_finger_mask = 0;
 		FAKE_POWER_KEY_SEND = false;
@@ -3457,6 +3519,7 @@ int himax_chip_common_resume(struct himax_ts_data *ts)
 		I("%s: It had entered resume, skip this step\n", __func__);
 		goto END;
 	} else {
+		himax_chip_common_set_aot_enabled(ts, false, false);
 		ts->suspended = false;
 	}
 
@@ -3472,11 +3535,6 @@ int himax_chip_common_resume(struct himax_ts_data *ts)
 		usleep_range(5000, 5000);
 	}
 #endif
-
-	if (ts->SMWP_enable)
-		himax_ctrl_lcd_regulators(ts, false);
-	else 
-		himax_pinctrl_configure(ts, true);
 
 	atomic_set(&ts->suspend_mode, HIMAX_STATE_POWER_ON);
 
