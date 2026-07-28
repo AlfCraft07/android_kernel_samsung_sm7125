@@ -179,8 +179,8 @@ jobs:
           3. Reboot and enjoy!
           
           ## Device Compatibility
-          - Samsung Galaxy Tab S6 Lite (SM-P613), Galaxy A52 4G (SM-A525F), Galaxy A72 4G (SM-A725F)
-          - Models: gta4xlve, a52q, a72q
+          - Samsung Galaxy Tab S6 Lite 2022 Wi-Fi & LTE (SM-P613/SM-P619), Galaxy A52 4G (SM-A525F), Galaxy A72 4G (SM-A725F)
+          - Models: gta4xlve, gta4xlvewifi, a52q, a72q
           - Android 11-16 / LineageOS 18-23
           
           ## Credits

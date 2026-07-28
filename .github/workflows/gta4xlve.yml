@@ -1,4 +1,4 @@
-name: Galaxy Tab S6 Lite 2022 LTE (SM-P619) Build
+name: Galaxy Tab S6 Lite 2022 Wi-Fi & LTE (SM-P613/SM-P619) Build
 
 on:
   workflow_dispatch:
@@ -57,7 +57,7 @@ jobs:
           ## AnyKernel setup
           # begin properties
           properties() { '
-          kernel.string=Legion Kernel for atoll platform - Built for gta4xlve (SM-P619)
+          kernel.string=Legion Kernel for atoll platform - Built for gta4xlveu (SM-P613/SM-P619)
           do.devicecheck=0
           do.modules=0
           do.systemless=1
@@ -65,8 +65,9 @@ jobs:
           do.cleanuponabort=0
           device.name1=gta4xlve
           device.name2=gta4xl
-          device.name3=SM-P619
+          device.name3=SM-P613
           device.name4=gta4xlveu
+          device.name5=SM-P619
           supported.versions=11-16
           supported.patchlevels=
           '; } # end properties
@@ -179,8 +180,8 @@ jobs:
           3. Reboot and enjoy!
           
           ## Device Compatibility
-          - Samsung Galaxy Tab S6 Lite 2022 Wi-Fi (SM-P613), Galaxy Tab S6 Lite 2022 LTE (SM-P619), Galaxy A52 4G (SM-A525F), Galaxy A72 4G (SM-A725F)
-          - Models: gta4xlve, a52q, a72q
+          - Samsung Galaxy Tab S6 Lite 2022 Wi-Fi & LTE (SM-P613/SM-P619), Galaxy A52 4G (SM-A525F), Galaxy A72 4G (SM-A725F)
+          - Models: gta4xlve, gta4xlvewifi, a52q, a72q
           - Android 11-16 / LineageOS 18-23
           
           ## Credits

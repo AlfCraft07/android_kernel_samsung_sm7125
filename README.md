@@ -36,7 +36,7 @@
 ### Known issues
 - a52q: none so far
 - a72q: none so far
-- gta4xlvewifi: broken touchscreen and OTG
+- gta4xlvewifi: none so far
 - gta4xlve: none so far
 
 ### About this Repository:
