@@ -48,15 +48,9 @@
  * Switch events
  */
 #define SW_FOLDER		0x00  /* set = folder open, close*/
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #define SW_FLIP			0x10  /* set = flip cover open, close*/
 #define SW_CERTIFYHALL		0x0b  /* set = certify_hall attach/detach */
 #define SW_WACOM_HALL			0x0c	/* set = tablet wacom hall attach/detach(set wacom cover mode) */
-#else
-#define SW_FLIP			0x15  /* set = flip cover open, close*/
-#define SW_CERTIFYHALL		0x1b  /* set = certify_hall attach/detach */
-#define SW_WACOM_HALL			0x1e	/* set = tablet wacom hall attach/detach(set wacom cover mode) */
-#endif
 
 #define DEFAULT_DEBOUNCE_INTERVAL	50
 
@@ -480,20 +474,18 @@ static struct hall_ic_pdata *hall_ic_parsing_dt(struct device *dev)
 			pr_err("failed to get event: 0x%x\n", hall->event);
 			return ERR_PTR(-EINVAL);
 		}
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 		if (hall->event == 0x15) { /* SW_FLIP */
 			hall->event = 0x10;
 		} else if (hall->event == 0x1b) {	/* SW_CERTIFYHALL */
 			hall->event = 0x0b;
 		} else if (hall->event == 0x1e) {	/* SW_WACOM_HALL */
 			hall->event = 0x0c;
-		} else if (hall->event == 0x00) {	/* SW_FOLSW_FLIPDER */
+		} else if (hall->event == 0x00) {	/* SW_FOLDER */
 			continue;
 		} else {
 			pr_err("failed to get name, not match event\n");
 			return ERR_PTR(-EINVAL);
 		}
-#endif
 		list_add(&hall->list, &hall_ic_list);
 	}
 	return pdata;
