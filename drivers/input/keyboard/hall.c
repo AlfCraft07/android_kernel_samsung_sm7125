@@ -380,18 +380,7 @@ static int hall_ic_setup_halls(struct hall_ic_drvdata *ddata)
 	sysfs_create_file(&ddata->sec_dev->kobj, &dev_attr_debounce.attr);
 	list_for_each_entry(hall, &hall_ic_list, list) {
 		hall->state = gpio_get_value_cansleep(hall->gpio);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-		// 4.19 R
-		wakeup_source_init(hall->ws, "hall_ic_wlock");
-		// 4.19 Q
-		if (!(hall->ws)) {
-			hall->ws = wakeup_source_create("hall_ic_wlock");
-			if (hall->ws)
-				wakeup_source_add(hall->ws);
-		}
-#else
 		hall->ws = wakeup_source_register(NULL, "hall_ic_wlock");
-#endif
 		INIT_DELAYED_WORK(&hall->dwork, hall_ic_work);
 		ret = request_threaded_irq(hall->irq, NULL, hall_ic_detect,
 				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
@@ -404,13 +393,13 @@ static int hall_ic_setup_halls(struct hall_ic_drvdata *ddata)
 		if (!ddata->sec_dev)
 			continue;
 
-		for (i = 0; i < ARRAY_SIZE(hall_ic_attrs); i++) {
+		for (i = 0; hall_ic_attrs[i]; i++) {
 			if (!strncmp(hall->name, hall_ic_attrs[i]->attr.name,
 					strlen(hall->name))) {
 				ret = sysfs_create_file(&ddata->sec_dev->kobj,
 						&hall_ic_attrs[i]->attr);
 				if (ret < 0)
-					pr_err("failed to create sysfr %d(%d)\n",
+					pr_err("failed to create sysfs %d(%d)\n",
 						hall->irq, ret);
 				break;
 			}
