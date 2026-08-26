@@ -261,6 +261,8 @@ static void hall_ic_work(struct work_struct *work)
 
 	if (hall->input) {
 		input_report_switch(hall->input, hall->event, state);
+		if (hall->event == SW_FLIP)
+			input_report_switch(hall->input, SW_LID, state);
 		input_sync(hall->input);
 	}
 #if IS_ENABLED(CONFIG_HALL_NOTIFIER)
@@ -338,6 +340,8 @@ static int hall_ic_input_dev_register(struct hall_ic_data *hall)
 
 	hall->input = input;
 	input_set_capability(input, EV_SW, hall->event);
+	if (hall->event == SW_FLIP)
+		input_set_capability(input, EV_SW, SW_LID);
 	input->name = hall->name;
 	input->phys = hall->name;
 	input->open = hall_ic_open;
@@ -455,7 +459,7 @@ static struct hall_ic_pdata *hall_ic_parsing_dt(struct device *dev)
 		hall->active_low = flags & OF_GPIO_ACTIVE_LOW;
 		gpio_direction_input(hall->gpio);
 		hall->irq = gpio_to_irq(hall->gpio);
-		hall->name = of_get_property(pp, "name", NULL);
+		hall->name = pp->name;
 
 		pr_info("%s flags: %d\n", __func__, flags);
 		pr_info("%s %s\n", __func__, hall->name);
