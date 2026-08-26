@@ -590,8 +590,6 @@ static int hall_ic_resume(struct device *dev)
 				state ? "close" : "open", hall->state);
 			disable_irq_wake(hall->irq);
 			input_report_switch(hall->input, hall->event, state);
-			if (hall->event == SW_FLIP)
-				input_report_switch(hall->input, SW_LID, state);
 			input_sync(hall->input);
 		}
 	}
