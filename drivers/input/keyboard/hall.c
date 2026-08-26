@@ -438,6 +438,7 @@ static struct hall_ic_pdata *hall_ic_parsing_dt(struct device *dev)
 	pr_info("%s debounce interval: %d\n", __func__, pdata->debounce_interval);
 
 	pdata->nhalls = nhalls;
+	INIT_LIST_HEAD(&hall_ic_list);
 	for_each_child_of_node(node, pp) {
 		struct hall_ic_data *hall = &pdata->hall[i++];
 		enum of_gpio_flags flags;
@@ -475,7 +476,7 @@ static struct hall_ic_pdata *hall_ic_parsing_dt(struct device *dev)
 			pr_err("failed to get name, not match event\n");
 			return ERR_PTR(-EINVAL);
 		}
-		list_add(&hall->list, &hall_ic_list);
+		list_add_tail(&hall->list, &hall_ic_list);
 	}
 	return pdata;
 }
