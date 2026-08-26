@@ -48,9 +48,9 @@
  * Switch events
  */
 #define SW_FOLDER		0x00  /* set = folder open, close*/
-#define SW_FLIP			0x10  /* set = flip cover open, close*/
-#define SW_CERTIFYHALL		0x0b  /* set = certify_hall attach/detach */
-#define SW_WACOM_HALL			0x0c	/* set = tablet wacom hall attach/detach(set wacom cover mode) */
+#define SW_FLIP			0x15  /* set = flip cover open, close*/
+#define SW_CERTIFYHALL		0x1b  /* set = certify_hall attach/detach */
+#define SW_WACOM_HALL		0x1e  /* set = tablet wacom hall attach/detach(set wacom cover mode) */
 
 #define DEFAULT_DEBOUNCE_INTERVAL	50
 
@@ -274,8 +274,6 @@ static void hall_ic_work(struct work_struct *work)
 
 	if (hall->input) {
 		input_report_switch(hall->input, hall->event, state);
-		if (hall->event == SW_FLIP)
-			input_report_switch(hall->input, SW_LID, state);
 		input_sync(hall->input);
 	}
 #if IS_ENABLED(CONFIG_HALL_NOTIFIER)
@@ -353,8 +351,6 @@ static int hall_ic_input_dev_register(struct hall_ic_data *hall)
 
 	hall->input = input;
 	input_set_capability(input, EV_SW, hall->event);
-	if (hall->event == SW_FLIP)
-		input_set_capability(input, EV_SW, SW_LID);
 	input->name = hall->name;
 	input->phys = hall->name;
 	input->open = hall_ic_open;
@@ -480,18 +476,6 @@ static struct hall_ic_pdata *hall_ic_parsing_dt(struct device *dev)
 
 		if (of_property_read_u32(pp, "event", &hall->event)) {
 			pr_err("failed to get event: 0x%x\n", hall->event);
-			return ERR_PTR(-EINVAL);
-		}
-		if (hall->event == 0x15) { /* SW_FLIP */
-			hall->event = 0x10;
-		} else if (hall->event == 0x1b) {	/* SW_CERTIFYHALL */
-			hall->event = 0x0b;
-		} else if (hall->event == 0x1e) {	/* SW_WACOM_HALL */
-			hall->event = 0x0c;
-		} else if (hall->event == 0x00) {	/* SW_FOLDER */
-			continue;
-		} else {
-			pr_err("failed to get name, not match event\n");
 			return ERR_PTR(-EINVAL);
 		}
 	}
