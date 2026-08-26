@@ -478,6 +478,8 @@ static struct hall_ic_pdata *hall_ic_parsing_dt(struct device *dev)
 			pr_err("failed to get event: 0x%x\n", hall->event);
 			return ERR_PTR(-EINVAL);
 		}
+		if (strcmp(hall->name, "hall") == 0 && hall->event == 0)
+			hall->event = SW_FLIP;
 	}
 	return pdata;
 }
