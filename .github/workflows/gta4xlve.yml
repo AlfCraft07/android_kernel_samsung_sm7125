@@ -46,6 +46,22 @@ jobs:
             libncurses5-dev libssl-dev rsync zip unzip wget curl ca-certificates \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
 
+      # -----------------------------------------------------------------------
+      # KERNELSU: Using Official Setup Script
+      # -----------------------------------------------------------------------
+      - name: Setup KernelSU
+        run: |
+          echo "=========================================="
+          echo "backslashxx KernelSU Setup"
+          echo "=========================================="
+          
+          # Download and run official setup script with v1.1.1 tag
+          curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
+          
+          echo "=========================================="
+          echo "✓ backslashxx KernelSU setup complete (official script)"
+          echo "=========================================="
+
       - name: Setup AnyKernel3
         run: |
           git clone --depth=1 https://github.com/AlfCraft07/AnyKernel3.git ~/AnyKernel3
