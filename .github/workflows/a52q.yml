@@ -3,7 +3,7 @@ name: Galaxy A52 (SM-A525F) Build
 on:
   workflow_dispatch:
   push:
-    branches: [ "copilot/debug-kernelsu-hooks" ]
+    branches: [ "oneui/android16", "main", "master", "copilot/**" ]
 
 jobs:
   build:
@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 0
+          fetch-depth: 1
 
       # -----------------------------------------------------------------------
       # CACHING: Saves time by not re-downloading Clang every run
