@@ -504,7 +504,7 @@ static int hall_ic_probe(struct platform_device *pdev)
 	struct hall_ic_pdata *pdata = dev_get_platdata(dev);
 	struct hall_ic_drvdata *ddata;
 	struct hall_ic_data *hall;
-	int ret = 0;
+	int ret = 0, i;
 
 	if (!pdata) {
 		pdata = hall_ic_parsing_dt(dev);
