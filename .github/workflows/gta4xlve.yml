@@ -159,6 +159,9 @@ jobs:
           
           if [ $BUILD_STATUS -ne 0 ]; then
             echo "Build failed with status $BUILD_STATUS"
+            echo "==================== COMPILER ERRORS ===================="
+            grep -i -n -E "error:|fatal error:|undefined reference" build.log -B 2 -A 5 || true
+            echo "=========================================================="
             echo "Last 100 lines of build log:"
             tail -100 build.log
             exit $BUILD_STATUS
