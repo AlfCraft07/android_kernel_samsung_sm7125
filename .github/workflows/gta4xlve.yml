@@ -47,19 +47,19 @@ jobs:
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
 
       # -----------------------------------------------------------------------
-      # KERNELSU: Using Official Setup Script
+      # KERNELSU-NEXT: Using Legacy Setup Script
       # -----------------------------------------------------------------------
-      - name: Setup KernelSU
+      - name: Setup KernelSU-Next
         run: |
           echo "=========================================="
-          echo "backslashxx KernelSU Setup"
+          echo "KernelSU-Next Setup (Legacy)"
           echo "=========================================="
           
-          # Download and run official setup script with v1.1.1 tag
-          curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
+          # Download and run KernelSU-Next legacy setup script
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
           
           echo "=========================================="
-          echo "✓ backslashxx KernelSU setup complete (official script)"
+          echo "✓ KernelSU-Next setup complete"
           echo "=========================================="
 
       - name: Setup AnyKernel3

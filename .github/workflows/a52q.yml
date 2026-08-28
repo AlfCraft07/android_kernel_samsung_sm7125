@@ -46,6 +46,22 @@ jobs:
             libncurses5-dev libssl-dev rsync zip unzip wget curl ca-certificates \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
 
+      # -----------------------------------------------------------------------
+      # KERNELSU-NEXT: Using Legacy Setup Script
+      # -----------------------------------------------------------------------
+      - name: Setup KernelSU-Next
+        run: |
+          echo "=========================================="
+          echo "KernelSU-Next Setup (Legacy)"
+          echo "=========================================="
+          
+          # Download and run KernelSU-Next legacy setup script
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
+          
+          echo "=========================================="
+          echo "✓ KernelSU-Next setup complete"
+          echo "=========================================="
+
       - name: Setup AnyKernel3
         run: |
           git clone --depth=1 https://github.com/AlfCraft07/AnyKernel3.git ~/AnyKernel3
