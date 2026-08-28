@@ -129,8 +129,7 @@ jobs:
           export LLVM_IAS=1
           
           # 2. Clean
-          mkdir -p out
-          make O=out clean mrproper
+          rm -rf out && mkdir -p out
 
           # 3. Build Base Config (TARGET_KERNEL_CONFIG)
           echo "--> Generating Base Config: vendor/samsung/sm7125_defconfig"
