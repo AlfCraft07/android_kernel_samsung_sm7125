@@ -59,7 +59,10 @@ jobs:
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
           
           # Fix timespec64 pointer mismatch in sulog/event.c for 4.14 kernels
-          sed -i 's/get_monotonic_boottime(&ts)/ktime_get_boottime_ts64(\&ts)/g' KernelSU-Next/kernel/sulog/event.c
+          python3 -c "p = 'KernelSU-Next/kernel/sulog/event.c'; content = open(p).read(); open(p, 'w').write(content.replace('get_monotonic_boottime(&ts)', 'ktime_get_boottime_ts64(&ts)'))"
+          
+          # Fix undefined ksu_input_hook symbol in ksud_integration.c for kprobes mode
+          python3 -c "p = 'KernelSU-Next/kernel/runtime/ksud_integration.c'; content = open(p).read(); open(p, 'w').write(content.replace('static struct work_struct __maybe_unused stop_input_hook_work;', 'static struct work_struct __maybe_unused stop_input_hook_work;\nbool ksu_input_hook __read_mostly = true;'))"
           
           echo "=========================================="
           echo "✓ KernelSU-Next setup complete"
