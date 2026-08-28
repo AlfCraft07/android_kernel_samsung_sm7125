@@ -47,19 +47,29 @@ jobs:
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
 
       # -----------------------------------------------------------------------
-      # KERNELSU: Using Official Setup Script
+      # KERNELSU-NEXT: Using Legacy Setup Script
       # -----------------------------------------------------------------------
-      - name: Setup KernelSU
+      - name: Setup KernelSU-Next
         run: |
           echo "=========================================="
-          echo "backslashxx KernelSU Setup"
+          echo "KernelSU-Next Setup (Legacy)"
           echo "=========================================="
           
-          # Download and run official setup script with v1.1.1 tag
-          curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh" | bash -s master
+          # Download and run KernelSU-Next legacy setup script
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
+          
+          # Fix timespec64 pointer mismatch in sulog/event.c for 4.14 kernels
+          python3 -c "p = 'KernelSU-Next/kernel/sulog/event.c'; content = open(p).read(); open(p, 'w').write(content.replace('get_monotonic_boottime(&ts)', 'ktime_get_boottime_ts64(&ts)'))"
+          
+          # Fix undefined ksu_input_hook symbol in ksud_integration.c for kprobes mode
+          python3 -c "p = 'KernelSU-Next/kernel/runtime/ksud_integration.c'; content = open(p).read(); open(p, 'w').write(content.replace('static struct work_struct __maybe_unused stop_input_hook_work;', 'static struct work_struct __maybe_unused stop_input_hook_work;\nbool ksu_input_hook __read_mostly = true;'))"
+          
+          # Fix NULL pointer dereference in ksu_handle_execve_sucompat
+          python3 -c "p = 'KernelSU-Next/kernel/feature/sucompat.c'; content = open(p).read(); open(p, 'w').write(content.replace('const char __user *const __user *argv_user = (const char __user *const __user *)PT_REGS_PARM2(regs);', 'const char __user *const __user *argv_user = regs ? (const char __user *const __user *)PT_REGS_PARM2(regs) : NULL;'))"
+          python3 -c "p = 'KernelSU-Next/kernel/hook/hook_manager.c'; content = open(p).read(); open(p, 'w').write(content.replace('ksu_handle_execve_sucompat(filename_user, NULL, NULL);', 'ksu_handle_execve_sucompat(filename_user, id, regs);'))"
           
           echo "=========================================="
-          echo "✓ backslashxx KernelSU setup complete (official script)"
+          echo "✓ KernelSU-Next setup complete"
           echo "=========================================="
 
       - name: Setup AnyKernel3
@@ -132,8 +142,7 @@ jobs:
           export LLVM_IAS=1
           
           # 2. Clean
-          mkdir -p out
-          make O=out clean mrproper
+          rm -rf out && mkdir -p out
 
           # 3. Build Base Config (TARGET_KERNEL_CONFIG)
           echo "--> Generating Base Config: vendor/samsung/sm7125_defconfig"
@@ -160,6 +169,9 @@ jobs:
           
           if [ $BUILD_STATUS -ne 0 ]; then
             echo "Build failed with status $BUILD_STATUS"
+            echo "==================== COMPILER ERRORS ===================="
+            grep -i -n -E "error:|fatal error:|undefined reference" build.log -B 2 -A 5 || true
+            echo "=========================================================="
             echo "Last 100 lines of build log:"
             tail -100 build.log
             exit $BUILD_STATUS
