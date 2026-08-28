@@ -3,7 +3,7 @@ name: Galaxy A52 (SM-A525F) Build
 on:
   workflow_dispatch:
   push:
-    branches: [ "oneui/android16", "main", "master", "copilot/**" ]
+    branches: [ "oneui/android16", "main", "master", "copilot/**", "ksu", "ksu-next", "ksu/**" ]
 
 jobs:
   build:
