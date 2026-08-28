@@ -62,6 +62,10 @@ jobs:
           # Fix undefined ksu_input_hook symbol in ksud_integration.c for kprobes mode
           python3 -c "p = 'KernelSU-Next/kernel/runtime/ksud_integration.c'; content = open(p).read(); open(p, 'w').write(content.replace('static struct work_struct __maybe_unused stop_input_hook_work;', 'static struct work_struct __maybe_unused stop_input_hook_work;\nbool ksu_input_hook __read_mostly = true;'))"
           
+          # Fix NULL pointer dereference in ksu_handle_execve_sucompat
+          python3 -c "p = 'KernelSU-Next/kernel/feature/sucompat.c'; content = open(p).read(); open(p, 'w').write(content.replace('const char __user *const __user *argv_user = (const char __user *const __user *)PT_REGS_PARM2(regs);', 'const char __user *const __user *argv_user = regs ? (const char __user *const __user *)PT_REGS_PARM2(regs) : NULL;'))"
+          python3 -c "p = 'KernelSU-Next/kernel/hook/hook_manager.c'; content = open(p).read(); open(p, 'w').write(content.replace('ksu_handle_execve_sucompat(filename_user, NULL, NULL);', 'ksu_handle_execve_sucompat(filename_user, id, regs);'))"
+          
           echo "=========================================="
           echo "✓ KernelSU-Next setup complete"
           echo "=========================================="
