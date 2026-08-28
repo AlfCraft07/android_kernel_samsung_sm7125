@@ -56,6 +56,9 @@ jobs:
           # Download and run KernelSU-Next legacy setup script
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
           
+          # Fix timespec64 pointer mismatch in sulog/event.c for 4.14 kernels
+          sed -i 's/get_monotonic_boottime(&ts)/ktime_get_boottime_ts64(\&ts)/g' KernelSU-Next/kernel/sulog/event.c
+          
           echo "=========================================="
           echo "✓ KernelSU-Next setup complete"
           echo "=========================================="
