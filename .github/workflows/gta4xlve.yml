@@ -3,7 +3,7 @@ name: Galaxy Tab S6 Lite 2022 Wi-Fi & LTE (SM-P613/SM-P619) Build
 on:
   workflow_dispatch:
   push:
-    branches: [ "oneui/android16", "main", "master", "copilot/**" ]
+    branches: [ "main", "master", "copilot/**" ]
 
 jobs:
   build:
