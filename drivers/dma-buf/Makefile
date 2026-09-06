@@ -3,3 +3,5 @@ obj-$(CONFIG_SYNC_FILE)		+= sync_file.o
 obj-$(CONFIG_SW_SYNC)		+= sw_sync.o sync_debug.o
 obj-$(CONFIG_DEBUG_DMA_BUF_REF)	+= dma-buf-ref.o
 obj-$(CONFIG_DMABUF_HEAPS)	+= dma-heap.o heaps/
+obj-$(CONFIG_DMABUF_HEAPS_SYSTEM)	+= heaps/system_heap.o
+obj-$(CONFIG_DMABUF_HEAPS_CMA)		+= heaps/cma_heap.o
