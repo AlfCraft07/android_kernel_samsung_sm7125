@@ -537,7 +537,6 @@ static int system_heap_create(void)
 
 	for (i = 0; i < NUM_ORDERS; i++) {
 		pools[i] = dmabuf_page_pool_create(order_flags[i], orders[i]);
-
 		if (IS_ERR(pools[i])) {
 			int j;
 
@@ -548,24 +547,36 @@ static int system_heap_create(void)
 		}
 	}
 
+	/* 1. Standard system heap */
 	exp_info.name = "system";
 	exp_info.ops = &system_heap_ops;
 	exp_info.priv = NULL;
-
 	sys_heap = dma_heap_add(&exp_info);
 	if (IS_ERR(sys_heap))
 		return PTR_ERR(sys_heap);
 
+	/* 2. Qualcomm alias for system heap */
+	exp_info.name = "qcom,system";
+	exp_info.ops = &system_heap_ops;
+	exp_info.priv = NULL;
+	dma_heap_add(&exp_info);
+
+	/* 3. Standard system-uncached heap */
 	exp_info.name = "system-uncached";
 	exp_info.ops = &system_uncached_heap_ops;
 	exp_info.priv = NULL;
-
 	sys_uncached_heap = dma_heap_add(&exp_info);
 	if (IS_ERR(sys_uncached_heap))
 		return PTR_ERR(sys_uncached_heap);
 
+	/* 4. Qualcomm alias for system-uncached heap */
+	exp_info.name = "qcom,system-uncached";
+	exp_info.ops = &system_uncached_heap_ops;
+	exp_info.priv = NULL;
+	dma_heap_add(&exp_info);
+
 	dma_coerce_mask_and_coherent(dma_heap_get_dev(sys_uncached_heap), DMA_BIT_MASK(64));
-	mb(); /* make sure we only set allocate after dma_mask is set */
+	mb();
 	system_uncached_heap_ops.allocate = system_uncached_heap_allocate;
 
 	return 0;
