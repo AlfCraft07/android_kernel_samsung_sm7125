@@ -69,32 +69,16 @@ static int heap_dt_init(struct device_node *mem_node,
 	const __be32 *basep;
 	u64 base, size;
 	struct device *dev = heap->dev;
-	struct reserved_mem *rmem;
 	int ret = 0;
 
-
-	rmem = of_reserved_mem_lookup(mem_node);
-
-	if (!rmem) {
-		dev_err(dev, "Failed to find reserved memory region\n");
-		return -EINVAL;
-	}
-
 	/*
-	 * We only need to call this when the memory-region is managed by
-	 * a reserved memory region driver (e.g. CMA, coherent, etc). In that
-	 * case, they will have ops for device specific initialization for
-	 * the memory region. Otherwise, we have a pure carveout, which needs
-	 * not be initialized.
+	 * Initialize the reserved memory region. In 4.14, of_reserved_mem_device_init_by_idx
+	 * checks internally if the region has ops. For pure carveouts, it returns 0.
 	 */
-	if (rmem->ops) {
-		ret = of_reserved_mem_device_init_by_idx(dev, dev->of_node, 0);
-		if (ret) {
-			dev_err(dev,
-				"Failed to initialize memory region rc: %d\n",
-				ret);
-			return ret;
-		}
+	ret = of_reserved_mem_device_init_by_idx(dev, dev->of_node, 0);
+	if (ret) {
+		dev_err(dev, "Failed to initialize memory region rc: %d\n", ret);
+		return ret;
 	}
 
 	basep = of_get_address(mem_node, 0, &size, NULL);
@@ -171,7 +155,7 @@ struct platform_data *parse_heap_dt(struct platform_device *pdev)
 			ret = -EINVAL;
 			goto free_heaps;
 		}
-		of_dma_configure(&new_dev->dev, node, true);
+		of_dma_configure(&new_dev->dev, node);
 
 		pdata->heaps[idx].dev = &new_dev->dev;
 
