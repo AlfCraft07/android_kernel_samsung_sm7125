@@ -11,7 +11,7 @@
 #include <linux/device.h>
 #include <linux/dma-buf.h>
 #include <linux/err.h>
-#include <linux/xarray.h>
+#include <linux/idr.h>
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/nospec.h>
@@ -19,12 +19,6 @@
 #include <linux/syscalls.h>
 #include <linux/dma-heap.h>
 #include <uapi/linux/dma-heap.h>
-#include <linux/jiffies.h>
-#include <linux/sched/cputime.h>
-#include <linux/vmstat.h>
-
-#include <trace/hooks/dmabuf.h>
-#include <trace/events/tracing_mark_write.h>
 
 #define DEVNAME "dma_heap"
 
@@ -56,7 +50,8 @@ static LIST_HEAD(heap_list);
 static DEFINE_MUTEX(heap_list_lock);
 static dev_t dma_heap_devt;
 static struct class *dma_heap_class;
-static DEFINE_XARRAY_ALLOC(dma_heap_minors);
+static DEFINE_IDR(dma_heap_minors);
+static DEFINE_MUTEX(dma_heap_idr_lock);
 
 struct dma_heap *dma_heap_find(const char *name)
 {
@@ -82,71 +77,16 @@ void dma_heap_buffer_free(struct dma_buf *dmabuf)
 }
 EXPORT_SYMBOL_GPL(dma_heap_buffer_free);
 
-static void sum_vm_event(unsigned long *ret, int item)
-{
-	int cpu;
-
-	*ret = 0;
-	for_each_online_cpu(cpu) {
-		struct vm_event_state *this = &per_cpu(vm_event_states, cpu);
-
-		*ret += this->event[item];
-	}
-}
-
-static const int vm_events_item[] = {
-	PGPGIN,
-	PGSTEAL_KSWAPD,
-	PGSTEAL_DIRECT,
-	PGSTEAL_ANON,
-	PGSTEAL_FILE,
-	FOR_ALL_ZONES(PGALLOC),
-};
-
-static void get_vm_events(unsigned long ret[])
-{
-	int i;
-
-	for (i = 0; i < (int)ARRAY_SIZE(vm_events_item); i++)
-		sum_vm_event(&ret[i], vm_events_item[i]);
-}
-
-#define K(x) ((x) << (PAGE_SHIFT-10))
-
-static void dma_heap_print_vmstat(unsigned long before[], unsigned long after[])
-{
-	int i;
-
-	pr_info("%s(ikdaf[za]): ", __func__);
-	pr_cont("%lu ", (after[0] - before[0]) / 2); //PGPGIN
-	for (i = 1; i < (int)ARRAY_SIZE(vm_events_item); i++)
-		pr_cont("%lu ", (after[i] - before[i]) << (PAGE_SHIFT - 10));
-
-	pr_cont("na %lu ", K(global_node_page_state_pages(NR_ANON_MAPPED)));
-	pr_cont("nf %lu ", K(global_node_page_state_pages(NR_FILE_PAGES)));
-	pr_cont("ns %lu\n", K(global_node_page_state_pages(NR_SHMEM)));
-}
-
 struct dma_buf *dma_heap_buffer_alloc(struct dma_heap *heap, size_t len,
 				      unsigned int fd_flags,
 				      unsigned int heap_flags)
 {
-	bool vh_valid = false;
-	struct dma_buf *dma_buf;
-	unsigned long jiffies_s, jiffies_d;
-	u64 utime, stime_s, stime_e, stime_d;
-	static DEFINE_RATELIMIT_STATE(show_mem_ratelimit, HZ * 10, 1);
-	unsigned long vm_events_before[ARRAY_SIZE(vm_events_item)];
-	unsigned long vm_events_after[ARRAY_SIZE(vm_events_item)];
-
-	trace_android_vh_dmabuf_heap_flags_validation(heap,
-		len, fd_flags, heap_flags, &vh_valid);
-
 	if (fd_flags & ~DMA_HEAP_VALID_FD_FLAGS)
 		return ERR_PTR(-EINVAL);
 
-	if (heap_flags & ~DMA_HEAP_VALID_HEAP_FLAGS && !vh_valid)
+	if (heap_flags & ~DMA_HEAP_VALID_HEAP_FLAGS)
 		return ERR_PTR(-EINVAL);
+
 	/*
 	 * Allocations from all heaps have to begin
 	 * and end on page boundaries.
@@ -155,30 +95,7 @@ struct dma_buf *dma_heap_buffer_alloc(struct dma_heap *heap, size_t len,
 	if (!len)
 		return ERR_PTR(-EINVAL);
 
-	get_vm_events(vm_events_before);
-	jiffies_s = jiffies;
-	task_cputime(current, &utime, &stime_s);
-
-	tracing_mark_begin("%s(%s, %zu, 0x%x, 0x%x)", "dma-buf_alloc",
-			   heap->name, len, fd_flags, heap_flags);
-	dma_buf = heap->ops->allocate(heap, len, fd_flags, heap_flags);
-	tracing_mark_end();
-
-	jiffies_d = jiffies - jiffies_s;
-	if (jiffies_to_msecs(jiffies_d) > 100) {
-		task_cputime(current, &utime, &stime_e);
-		stime_d = stime_e - stime_s;
-		get_vm_events(vm_events_after);
-		dma_heap_print_vmstat(vm_events_before, vm_events_after);
-		pr_info("%s: %s fd_flags=0x%x heap_flags=0x%x timeJS(ms):%u/%llu len:%zu",
-			__func__, heap->name, fd_flags, heap_flags,
-			jiffies_to_msecs(jiffies_d),
-			stime_d / NSEC_PER_MSEC, len);
-		if (__ratelimit(&show_mem_ratelimit))
-			show_mem(0, NULL);
-	}
-
-	return dma_buf;
+	return heap->ops->allocate(heap, len, fd_flags, heap_flags);
 }
 EXPORT_SYMBOL_GPL(dma_heap_buffer_alloc);
 
@@ -207,17 +124,16 @@ EXPORT_SYMBOL_GPL(dma_heap_bufferfd_alloc);
 static int dma_heap_open(struct inode *inode, struct file *file)
 {
 	struct dma_heap *heap;
-
-	heap = xa_load(&dma_heap_minors, iminor(inode));
+	mutex_lock(&dma_heap_idr_lock);
+	heap = idr_find(&dma_heap_minors, iminor(inode));
+	mutex_unlock(&dma_heap_idr_lock);
 	if (!heap) {
 		pr_err("dma_heap: minor %d unknown.\n", iminor(inode));
 		return -ENODEV;
 	}
-
 	/* instance data as context */
 	file->private_data = heap;
 	nonseekable_open(inode, file);
-
 	return 0;
 }
 
@@ -337,7 +253,9 @@ static void dma_heap_release(struct kref *ref)
 
 	device_destroy(dma_heap_class, heap->heap_devt);
 	cdev_del(&heap->heap_cdev);
-	xa_erase(&dma_heap_minors, minor);
+	mutex_lock(&dma_heap_idr_lock);
+	idr_remove(&dma_heap_minors, minor);
+	mutex_unlock(&dma_heap_idr_lock);
 
 	kfree(heap);
 }
@@ -383,7 +301,7 @@ EXPORT_SYMBOL_GPL(dma_heap_get_name);
 struct dma_heap *dma_heap_add(const struct dma_heap_export_info *exp_info)
 {
 	struct dma_heap *heap, *h, *err_ret;
-	unsigned int minor;
+	int minor;
 	int ret;
 
 	if (!exp_info->name || !strcmp(exp_info->name, "")) {
@@ -406,13 +324,15 @@ struct dma_heap *dma_heap_add(const struct dma_heap_export_info *exp_info)
 	heap->priv = exp_info->priv;
 
 	/* Find unused minor number */
-	ret = xa_alloc(&dma_heap_minors, &minor, heap,
-		       XA_LIMIT(0, NUM_HEAP_MINORS - 1), GFP_KERNEL);
+	mutex_lock(&dma_heap_idr_lock);
+	ret = idr_alloc(&dma_heap_minors, heap, 0, NUM_HEAP_MINORS, GFP_KERNEL);
+	mutex_unlock(&dma_heap_idr_lock);
 	if (ret < 0) {
 		pr_err("dma_heap: Unable to get minor number for heap\n");
 		err_ret = ERR_PTR(ret);
 		goto err0;
 	}
+	minor = ret;
 
 	/* Create device */
 	heap->heap_devt = MKDEV(MAJOR(dma_heap_devt), minor);
@@ -463,7 +383,9 @@ err3:
 err2:
 	cdev_del(&heap->heap_cdev);
 err1:
-	xa_erase(&dma_heap_minors, minor);
+	mutex_lock(&dma_heap_idr_lock);
+	idr_remove(&dma_heap_minors, minor);
+	mutex_unlock(&dma_heap_idr_lock);
 err0:
 	kfree(heap);
 	return err_ret;
@@ -488,7 +410,7 @@ static ssize_t total_pools_kb_show(struct kobject *kobj,
 	}
 	mutex_unlock(&heap_list_lock);
 
-	return sysfs_emit(buf, "%llu\n", total_pool_size / 1024);
+	return scnprintf(buf, PAGE_SIZE, "%llu\n", total_pool_size / 1024);
 }
 
 static struct kobj_attribute total_pools_kb_attr =
