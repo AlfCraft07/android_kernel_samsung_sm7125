@@ -24,6 +24,10 @@
 #define kunmap_local(addr)	kunmap_atomic(addr)
 #endif
 
+#ifndef page_size
+#define page_size(page) (PAGE_SIZE << compound_order(page))
+#endif
+
 /* sgtable dma wrappers (introduced in 5.8) */
 static inline int dma_map_sgtable(struct device *dev, struct sg_table *sgt,
 				  enum dma_data_direction dir, unsigned long attrs)
