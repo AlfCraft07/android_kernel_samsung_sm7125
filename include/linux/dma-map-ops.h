@@ -5,7 +5,26 @@
 #include <linux/dma-mapping.h>
 #include <linux/dma-contiguous.h>
 #include <linux/scatterlist.h>
+#include <linux/highmem.h>
 
+/* scatterlist iterators (introduced in 5.8) */
+#ifndef for_each_sgtable_sg
+#define for_each_sgtable_sg(sgt, sg, i) \
+	for_each_sg((sgt)->sgl, sg, (sgt)->orig_nents, i)
+#endif
+
+#ifndef for_each_sgtable_page
+#define for_each_sgtable_page(sgt, iter, pgoff) \
+	for_each_sg_page((sgt)->sgl, iter, (sgt)->orig_nents, pgoff)
+#endif
+
+/* kmap_local replacements (introduced in 5.11 to replace kmap_atomic) */
+#ifndef kmap_local_page
+#define kmap_local_page(page)	kmap_atomic(page)
+#define kunmap_local(addr)	kunmap_atomic(addr)
+#endif
+
+/* sgtable dma wrappers (introduced in 5.8) */
 static inline int dma_map_sgtable(struct device *dev, struct sg_table *sgt,
 				  enum dma_data_direction dir, unsigned long attrs)
 {
