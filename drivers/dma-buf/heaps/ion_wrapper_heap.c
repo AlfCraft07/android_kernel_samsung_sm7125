@@ -9,8 +9,8 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 
-#include "../../../staging/android/ion/ion.h"
-#include "../../../staging/android/uapi/msm_ion.h"
+#include "../../staging/android/ion/ion.h"
+#include "../../staging/android/uapi/msm_ion.h"
 
 struct ion_heap_wrapper_entry {
 	const char *dma_heap_name;
