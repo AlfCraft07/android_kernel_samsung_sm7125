@@ -50,9 +50,9 @@ static const struct ion_heap_wrapper_entry wrapper_entries[] = {
 };
 
 static struct dma_buf *ion_wrapper_allocate(struct dma_heap *heap,
-					    size_t len,
-					    unsigned int fd_flags,
-					    unsigned int heap_flags)
+					    unsigned long len,
+					    unsigned long fd_flags,
+					    unsigned long heap_flags)
 {
 	const struct ion_heap_wrapper_entry *entry = dma_heap_get_drvdata(heap);
 	unsigned int alloc_flags = entry->default_flags;
