@@ -43,8 +43,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache cpio flex git kmod \
-            libncurses5-dev libssl-dev rsync zip unzip wget curl ca-certificates \
-            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
+            libncurses5-dev libssl-dev rsync zip unzip wget curl ca-certificates dwarves\
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler libelf-dev
 
       # -----------------------------------------------------------------------
       # KERNELSU-NEXT: Using Legacy Setup Script
