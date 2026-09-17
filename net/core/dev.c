@@ -4213,7 +4213,7 @@ static u32 netif_receive_generic_xdp(struct sk_buff *skb,
 	/* Reinjected packets coming from act_mirred or cpumap should
 	 * not get XDP generic processing a second time.
 	 */
-	if (skb_is_tc_redirected(skb) || skb_is_redirected(skb))
+	if (skb_is_tc_redirected(skb))
 		return XDP_PASS;
 
 	/* XDP packets must be linear and must have sufficient headroom
