@@ -3,6 +3,7 @@
 #define _LINUX_TIMEKEEPING_H
 
 #include <linux/errno.h>
+#include <linux/time64.h>
 
 /* Included from linux/ktime.h */
 
@@ -27,6 +28,14 @@ extern void ktime_get_raw_ts64(struct timespec64 *ts);
 extern void ktime_get_ts64(struct timespec64 *ts);
 extern void ktime_get_real_ts64(struct timespec64 *tv);
 extern void ktime_get_coarse_ts64(struct timespec64 *ts);
+static inline u64 ktime_get_coarse_ns(void)
+{
+	struct timespec64 ts;
+
+	ktime_get_coarse_ts64(&ts);
+	return timespec64_to_ns(&ts);
+}
+
 extern void ktime_get_coarse_real_ts64(struct timespec64 *ts);
 
 void getboottime64(struct timespec64 *ts);

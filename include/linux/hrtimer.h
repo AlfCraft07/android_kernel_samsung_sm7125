@@ -37,6 +37,9 @@ enum hrtimer_mode {
 	HRTIMER_MODE_REL_PINNED = 0x03,
 };
 
+#define HRTIMER_MODE_ABS_SOFT	HRTIMER_MODE_ABS
+#define HRTIMER_MODE_REL_SOFT	HRTIMER_MODE_REL
+
 /*
  * Return values for the callback function
  */
