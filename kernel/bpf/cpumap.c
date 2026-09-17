@@ -31,6 +31,16 @@
 #include <linux/netdevice.h>   /* netif_receive_skb_core */
 #include <linux/etherdevice.h> /* eth_type_trans */
 
+/* 4.14 compatibility: fallback for listified skb processing */
+static inline void netif_receive_skb_list(struct list_head *head)
+{
+	struct sk_buff *skb, *next;
+	list_for_each_entry_safe(skb, next, head, list) {
+		skb_list_del_init(skb);
+		netif_receive_skb(skb);
+	}
+}
+
 /* General idea: XDP packets getting XDP redirected to another CPU,
  * will maximum be stored/queued for one driver ->poll() call.  It is
  * guaranteed that queueing the frame and the flush operation happen on
