@@ -588,7 +588,7 @@ void __init pid_idr_init(void)
 			SLAB_HWCACHE_ALIGN | SLAB_PANIC | SLAB_ACCOUNT);
 }
 
-struct pid *pidfd_get_pid(int fd, unsigned int *flags)
+struct pid *pidfd_get_pid(unsigned int fd, unsigned int *flags)
 {
 	return ERR_PTR(-EOPNOTSUPP);
 }
