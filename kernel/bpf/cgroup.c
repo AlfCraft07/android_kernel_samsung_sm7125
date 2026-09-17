@@ -1127,6 +1127,7 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 		.t_ctx = t_ctx,
 	};
 	struct sockaddr_storage unspec;
+	struct bpf_prog_array *prog_array;
 	struct cgroup *cgrp;
 	int ret;
 
@@ -1142,7 +1143,6 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 	}
 
 	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
-	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], &ctx, BPF_PROG_RUN);
 
 	if (unlikely(!cgrp))
 		return 0;
