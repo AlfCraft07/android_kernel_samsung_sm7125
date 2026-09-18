@@ -243,6 +243,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           path: ${{ env.ZIPNAME }}
+          archive: false
 
       - name: Upload Build Log (Debug)
         if: always()
