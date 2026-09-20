@@ -56,7 +56,7 @@ jobs:
           echo "=========================================="
           
           # Download and run KernelSU-Next legacy setup script
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
+          curl -LSs "https://raw.githubusercontent.com/AlfCraft07/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
           
           # Fix timespec64 pointer mismatch in sulog/event.c for 4.14 kernels
           python3 -c "p = 'KernelSU-Next/kernel/sulog/event.c'; content = open(p).read(); open(p, 'w').write(content.replace('get_monotonic_boottime(&ts)', 'ktime_get_boottime_ts64(&ts)'))"
@@ -238,8 +238,8 @@ jobs:
       - name: Upload Flashable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: a72q
           path: ${{ env.ZIPNAME }}
+          archive: false
 
       - name: Upload Build Log (Debug)
         if: always()
