@@ -56,17 +56,50 @@ jobs:
           echo "=========================================="
           
           # Download and run KernelSU-Next legacy setup script
-          curl -LSs "https://raw.githubusercontent.com/AlfCraft07/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
           
-          # Fix timespec64 pointer mismatch in sulog/event.c for 4.14 kernels
-          python3 -c "p = 'KernelSU-Next/kernel/sulog/event.c'; content = open(p).read(); open(p, 'w').write(content.replace('get_monotonic_boottime(&ts)', 'ktime_get_boottime_ts64(&ts)'))"
-          
-          # Fix undefined ksu_input_hook symbol in ksud_integration.c for kprobes mode
-          python3 -c "p = 'KernelSU-Next/kernel/runtime/ksud_integration.c'; content = open(p).read(); open(p, 'w').write(content.replace('static struct work_struct __maybe_unused stop_input_hook_work;', 'static struct work_struct __maybe_unused stop_input_hook_work;\nbool ksu_input_hook __read_mostly = true;'))"
-          
-          # Fix NULL pointer dereference in ksu_handle_execve_sucompat
-          python3 -c "p = 'KernelSU-Next/kernel/feature/sucompat.c'; content = open(p).read(); open(p, 'w').write(content.replace('const char __user *const __user *argv_user = (const char __user *const __user *)PT_REGS_PARM2(regs);', 'const char __user *const __user *argv_user = regs ? (const char __user *const __user *)PT_REGS_PARM2(regs) : NULL;'))"
-          python3 -c "p = 'KernelSU-Next/kernel/hook/hook_manager.c'; content = open(p).read(); open(p, 'w').write(content.replace('ksu_handle_execve_sucompat(filename_user, NULL, NULL);', 'ksu_handle_execve_sucompat(filename_user, id, regs);'))"
+          # --------------------------------------------------------------
+          # Compatibility patches applied on top of the freshly-pulled,
+          # unpinned KernelSU-Next `legacy` source.
+          # --------------------------------------------------------------
+          python3 - <<'PYEOF'
+          import sys
+
+          def patch(path, old, new, label):
+              with open(path) as f:
+                  content = f.read()
+              if old not in content:
+                  print(f"::error::[{label}] target string not found in {path} - "
+                        f"KernelSU-Next source has changed upstream, patch needs review")
+                  sys.exit(1)
+              with open(path, "w") as f:
+                  f.write(content.replace(old, new))
+              print(f"[{label}] applied to {path}")
+
+          # This vendor's 4.14.357 tree only exposes ktime_get_boottime_ts64()/
+          # get_monotonic_boottime64(); it does NOT define the plain
+          # get_monotonic_boottime() that KernelSU-Next's own
+          # "#if KERNEL_VERSION(4,19,0) <= LINUX_VERSION_CODE" check falls back
+          # to on pre-4.19-numbered kernels. Force the modern call unconditionally.
+          patch(
+              "KernelSU-Next/kernel/sulog/event.c",
+              "get_monotonic_boottime(&ts)",
+              "ktime_get_boottime_ts64(&ts)",
+              "event.c timespec64",
+          )
+
+          # Fix KernelSU-Next selinux_hide so app processes don't crash:
+          # selinuxfs expects filp->private_data to be `struct page *`, but
+          # KernelSU-Next passes `page_address(data)` (kernel virtual address),
+          # causing page_to_pfn() to map an invalid physical address and trigger
+          # a Synchronous External Abort (ESR 0x92000006) on app launch.
+          patch(
+              "KernelSU-Next/kernel/feature/selinux_hide.c",
+              "filp->private_data = page_address(data);",
+              "filp->private_data = data;",
+              "selinux_hide page pointer",
+          )
+          PYEOF
           
           echo "=========================================="
           echo "✓ KernelSU-Next setup complete"
