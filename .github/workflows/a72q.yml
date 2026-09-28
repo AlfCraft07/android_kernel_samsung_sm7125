@@ -97,6 +97,28 @@ jobs:
               "#endif\nbool ksu_init_rc_hook __read_mostly = true;",
               "ksu_init_rc_hook definition",
           )
+
+          # Fix execveat sucompat flags parameter check:
+          # Upstream commit 8f77a401 incorrectly checked PT_REGS_SYSCALL_PARM4 (which is envp)
+          # instead of PT_REGS_PARM5 (flags). Since envp is non-null, this caused
+          # sucompat over execveat (used by modern Bionic on Android 15/16) to be bypassed.
+          patch(
+              "KernelSU-Next/kernel/feature/sucompat.c",
+              "(int)PT_REGS_SYSCALL_PARM4(regs) != 0",
+              "(int)PT_REGS_PARM5(regs) != 0",
+              "execveat flags parameter check",
+          )
+
+          # Fix supercall fd install privilege check locking out manager/allowed apps:
+          # Upstream commit 3c6dca5c restricted KSU_INSTALL_MAGIC2 to UID 0, but
+          # the manager (and apps requesting root via supercall) run as non-root UIDs
+          # and need the driver fd to execute `ksud debug su` and grant root.
+          patch(
+              "KernelSU-Next/kernel/supercall/supercall.c",
+              "if (current_uid().val != 0)\n\t\t\treturn 0;",
+              "if (current_uid().val != 0 && !allowed_for_su())\n\t\t\treturn 0;",
+              "supercall fd install allowed_for_su check",
+          )
           PYEOF
           
           echo "=========================================="
