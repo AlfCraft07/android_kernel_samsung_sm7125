@@ -1,7 +1,7 @@
-# Legion-atoll Kernel
+# Legion Kernel for Atoll (SM7125) platform
 
 > [!NOTE]
-> I'm not the original author of this nor did I make the BPF backports. This kernel's maintainer was [Simon1511](https://github.com/Simon1511) previously, and later [frostg-012](https://github.com/frostg-012) under the name Valeryn, I just added defconfig entries in order to make it compatible with the Tab S6 Lite 2022. Workflows were taken from [the LineageOS KernelSU Next kernel](https://github.com/IamKavy47/gta4xlve_kernel_ksun) by [IamKavy47](https://github.com/IamKavy47)
+> I'm not the original author of this nor did I make the BPF backports (until July 2026). This kernel's maintainer was [Simon1511](https://github.com/Simon1511) previously, and later [frostg-012](https://github.com/frostg-012) under the name Valeryn, I just added defconfig entries in order to make it compatible with the Tab S6 Lite 2022. Workflows were taken from [the LineageOS KernelSU Next kernel](https://github.com/IamKavy47/gta4xlve_kernel_ksun) by [IamKavy47](https://github.com/IamKavy47)
 
 > [!NOTE]
 > Feel free to FORK or create PR.
@@ -17,7 +17,7 @@
 - Bootable with OneUI7 ✅
 - Bootable with OneUI8+ ✅
 - Upstreamed to 4.14.357 ✅️
-- KernelSU Next ❌️
+- KernelSU Next ✅️
 - Maybe more in future
 
 ### Progress (Disclaimer: Kernel is most likely not the issue here)
@@ -31,7 +31,7 @@
 - One UI 7 GSI boot ✅, but currently has userspace crashes when connected to WiFi
 - One UI 8 GSI boot ❌️ (restarts after 12-14 secs)
 - One UI 8 port boot ✅️, minor issues
-- One UI 8.5 ROM port boot ✅, but negative amount of internal storage is shown and setup won't load on either QSSI or ESSI bases.
+- One UI 8.5 ROM port boot ✅
 
 ### Known issues
 - a52q: none so far
@@ -40,4 +40,4 @@
 - gta4xlve: none so far
 
 ### About this Repository:
-- This kernel was compiled in late May 2026 from the kernel source used in the One UI 8 port for the Galaxy A52 4G (SM-A525F), using a defconfig containing entries for P613 drivers. It has also recently been proven capable of booting OneUI 8 with minor bugs, and 8.5 albeit with critical issues most likely related to the ROM itself.
+- This kernel was compiled in late May 2026 from the kernel source used in the One UI 8 port for the Galaxy A52 4G (SM-A525F), using a defconfig containing entries for P613 drivers. It has also recently been proven capable of booting OneUI 8 and 8.5.

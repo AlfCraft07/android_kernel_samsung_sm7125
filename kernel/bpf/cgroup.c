@@ -1107,6 +1107,8 @@ EXPORT_SYMBOL(__cgroup_bpf_run_filter_sk);
  * @uaddr: sockaddr struct provided by user
  * @type: The type of program to be exectuted
  * @t_ctx: Pointer to attach type specific context
+ * @flags: Pointer to u32 which contains higher bits of BPF program
+ *         return value (OR'ed together).
  *
  * socket is expected to be of type INET or INET6.
  *
@@ -1116,7 +1118,8 @@ EXPORT_SYMBOL(__cgroup_bpf_run_filter_sk);
 int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 				      struct sockaddr *uaddr,
 				      enum bpf_attach_type type,
-				      void *t_ctx)
+				      void *t_ctx,
+				      u32 *flags)
 {
 	struct bpf_sock_addr_kern ctx = {
 		.sk = sk,
@@ -1124,6 +1127,7 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 		.t_ctx = t_ctx,
 	};
 	struct sockaddr_storage unspec;
+	struct bpf_prog_array *prog_array;
 	struct cgroup *cgrp;
 	int ret;
 
@@ -1139,8 +1143,20 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 	}
 
 	cgrp = sock_cgroup_ptr(&sk->sk_cgrp_data);
-	ret = BPF_PROG_RUN_ARRAY(cgrp->bpf.effective[type], &ctx, BPF_PROG_RUN);
 
+	if (unlikely(!cgrp))
+		return 0;
+
+	rcu_read_lock();
+	prog_array = rcu_dereference(cgrp->bpf.effective[type]);
+	if (unlikely(!prog_array)) {
+		rcu_read_unlock();
+		return 0;
+	}
+ 
+	ret = BPF_PROG_RUN_ARRAY_CG_FLAGS(prog_array, &ctx, BPF_PROG_RUN,
+					  flags);
+	rcu_read_unlock();
 	return ret == 1 ? 0 : -EPERM;
 }
 EXPORT_SYMBOL(__cgroup_bpf_run_filter_sock_addr);
@@ -1600,6 +1616,18 @@ BPF_CALL_4(bpf_sysctl_get_name, struct bpf_sysctl_kern *, ctx, char *, buf,
 	return ret < 0 ? ret : tmp_ret + ret;
 }
 
+BPF_CALL_1(bpf_get_netns_cookie_sockopt, struct bpf_sockopt_kern *, ctx)
+{
+	return __bpf_get_netns_cookie(ctx ? ctx->sk : NULL);
+}
+
+static const struct bpf_func_proto bpf_get_netns_cookie_sockopt_proto = {
+	.func		= bpf_get_netns_cookie_sockopt,
+	.gpl_only	= false,
+	.ret_type	= RET_INTEGER,
+	.arg1_type	= ARG_PTR_TO_CTX_OR_NULL,
+};
+
 static const struct bpf_func_proto bpf_sysctl_get_name_proto = {
 	.func		= bpf_sysctl_get_name,
 	.gpl_only	= false,
@@ -1829,6 +1857,8 @@ cg_sockopt_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
 	case BPF_FUNC_tcp_sock:
 		return &bpf_tcp_sock_proto;
 #endif
+	case BPF_FUNC_get_netns_cookie:
+		return &bpf_get_netns_cookie_sockopt_proto;
 	default:
 		return cgroup_base_func_proto(func_id, prog);
 	}
