@@ -55,71 +55,14 @@ jobs:
           echo "KernelSU-Next Setup (Legacy)"
           echo "=========================================="
           
-          # Download and run KernelSU-Next legacy setup script
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
-          
-          # --------------------------------------------------------------
-          # Compatibility patches applied on top of the freshly-pulled,
-          # unpinned KernelSU-Next `legacy` source.
-          # --------------------------------------------------------------
-          python3 - <<'PYEOF'
-          import sys
-
-          def patch(path, old, new, label):
-              with open(path) as f:
-                  content = f.read()
-              if old not in content:
-                  print(f"::error::[{label}] target string not found in {path} - "
-                        f"KernelSU-Next source has changed upstream, patch needs review")
-                  sys.exit(1)
-              with open(path, "w") as f:
-                  f.write(content.replace(old, new))
-              print(f"[{label}] applied to {path}")
-
-          # Fix KernelSU-Next selinux_hide so app processes don't crash:
-          # selinuxfs expects filp->private_data to be `struct page *`, but
-          # KernelSU-Next passes `page_address(data)` (kernel virtual address),
-          # causing page_to_pfn() to map an invalid physical address and trigger
-          # a Synchronous External Abort (ESR 0x92000006) on app launch.
-          patch(
-              "KernelSU-Next/kernel/feature/selinux_hide.c",
-              "filp->private_data = page_address(data);",
-              "filp->private_data = data;",
-              "selinux_hide page pointer",
-          )
-
-          # Fix undefined ksu_init_rc_hook in kprobes mode:
-          # Upstream commit 3c6dca5c added ksu_init_rc_hook checks to ksu_handle_sys_read
-          # and ksu_handle_vfs_read, but only declared it inside #else (non-kprobes mode).
-          patch(
-              "KernelSU-Next/kernel/runtime/ksud_integration.c",
-              "#else\nbool ksu_init_rc_hook __read_mostly = true;\n#endif",
-              "#endif\nbool ksu_init_rc_hook __read_mostly = true;",
-              "ksu_init_rc_hook definition",
-          )
-
-          # Fix execveat sucompat flags parameter check:
-          # Upstream commit 8f77a401 incorrectly checked PT_REGS_SYSCALL_PARM4 (which is envp)
-          # instead of PT_REGS_PARM5 (flags). Since envp is non-null, this caused
-          # sucompat over execveat (used by modern Bionic on Android 15/16) to be bypassed.
-          patch(
-              "KernelSU-Next/kernel/feature/sucompat.c",
-              "(int)PT_REGS_SYSCALL_PARM4(regs) != 0",
-              "(int)PT_REGS_PARM5(regs) != 0",
-              "execveat flags parameter check",
-          )
-
-          # Fix supercall fd install privilege check locking out manager/allowed apps:
-          # Upstream commit 3c6dca5c restricted KSU_INSTALL_MAGIC2 to UID 0, but
-          # the manager (and apps requesting root via supercall) run as non-root UIDs
-          # and need the driver fd to execute `ksud debug su` and grant root.
-          patch(
-              "KernelSU-Next/kernel/supercall/supercall.c",
-              "if (current_uid().val != 0)\n\t\t\treturn 0;",
-              "if (current_uid().val != 0 && !allowed_for_su())\n\t\t\treturn 0;",
-              "supercall fd install allowed_for_su check",
-          )
-          PYEOF
+          # Use the contributor's PR branch instead of the upstream legacy branch.
+          git clone --depth=1 --branch legacy-shit \
+            https://github.com/omrxm18/KernelSU-Next.git KernelSU-Next
+          ln -sf ../KernelSU-Next/kernel drivers/kernelsu
+          grep -q "kernelsu" drivers/Makefile || \
+            printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> drivers/Makefile
+          grep -q 'source "drivers/kernelsu/Kconfig"' drivers/Kconfig || \
+            sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
           echo "=========================================="
           echo "✓ KernelSU-Next setup complete"
