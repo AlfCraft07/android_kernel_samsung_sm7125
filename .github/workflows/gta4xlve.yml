@@ -56,7 +56,7 @@ jobs:
           echo "=========================================="
           
           # Download and run KernelSU-Next legacy setup script
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy
+          curl -LSs "https://raw.githubusercontent.com/AlfCraft07/KernelSU-Next/legacy/kernel/setup.sh" | bash -s legacy-lkg
           
           echo "=========================================="
           echo "✓ KernelSU-Next setup complete"
