@@ -14,6 +14,10 @@
 #ifndef _MSM_VIDC_INTERNAL_H_
 #define _MSM_VIDC_INTERNAL_H_
 
+#ifndef V4L2_PIX_FMT_QC12
+#define V4L2_PIX_FMT_QC12 v4l2_fourcc('Q', '1', '2', 'C') /* 0x43323151 */
+#endif
+
 #include <linux/atomic.h>
 #include <linux/list.h>
 #include <linux/time.h>

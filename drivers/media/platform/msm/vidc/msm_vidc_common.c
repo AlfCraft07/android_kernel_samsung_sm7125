@@ -952,6 +952,7 @@ enum hal_uncompressed_format msm_comm_get_hal_uncompressed(int fourcc)
 		format = HAL_COLOR_FORMAT_NV21;
 		break;
 	case V4L2_PIX_FMT_NV12_UBWC:
+	case V4L2_PIX_FMT_QC12:
 		format = HAL_COLOR_FORMAT_NV12_UBWC;
 		break;
 	case V4L2_PIX_FMT_NV12_TP10_UBWC:
@@ -2912,6 +2913,7 @@ bool is_batching_allowed(struct msm_vidc_inst *inst)
 		!inst->clk_data.low_latency_mode &&
 		!is_thumbnail_session(inst) &&
 		(inst->fmts[CAPTURE_PORT].fourcc == V4L2_PIX_FMT_NV12_UBWC ||
+		inst->fmts[CAPTURE_PORT].fourcc == V4L2_PIX_FMT_QC12 ||
 		inst->fmts[CAPTURE_PORT].fourcc == V4L2_PIX_FMT_NV12_TP10_UBWC))
 		allowed = true;
 

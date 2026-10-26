@@ -503,6 +503,15 @@ struct msm_vidc_format vdec_formats[] = {
 		.type = CAPTURE_PORT,
 	},
 	{
+        .name = "UBWC YCbCr Semiplanar 420 (QC12)",
+        .description = "UBWC Y/CbCr 4:2:0",
+        .fourcc = V4L2_PIX_FMT_QC12,
+        .type = CAPTURE_PORT,
+        .defer_outputs = false,
+        .get_frame_size = msm_vdec_calc_form_frame_size,
+        .set_format = msm_vdec_set_color_format,
+    },
+	{
 		.name = "UBWC YCbCr Semiplanar 4:2:0 10bit",
 		.description = "UBWC Y/CbCr 4:2:0 10bit",
 		.fourcc = V4L2_PIX_FMT_NV12_TP10_UBWC,

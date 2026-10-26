@@ -1222,6 +1222,15 @@ static struct msm_vidc_format venc_formats[] = {
 		.type = OUTPUT_PORT,
 	},
 	{
+        .name = "UBWC YCbCr Semiplanar 420 (QC12)",
+        .description = "UBWC Y/CbCr 4:2:0",
+        .fourcc = V4L2_PIX_FMT_QC12,
+        .type = OUTPUT_PORT,
+        .defer_outputs = false,
+        .get_frame_size = msm_venc_calc_form_frame_size,
+        .set_format = msm_venc_set_color_format,
+    },
+	{
 		.name = "H264",
 		.description = "H264 compressed format",
 		.fourcc = V4L2_PIX_FMT_H264,
