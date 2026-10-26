@@ -1227,8 +1227,8 @@ static struct msm_vidc_format venc_formats[] = {
         .fourcc = V4L2_PIX_FMT_QC12,
         .type = OUTPUT_PORT,
         .defer_outputs = false,
-        .get_frame_size = msm_venc_calc_form_frame_size,
-        .set_format = msm_venc_set_color_format,
+        .get_frame_size = get_frame_size_nv12_ubwc,
+        .set_format = msm_comm_set_color_format,
     },
 	{
 		.name = "H264",
