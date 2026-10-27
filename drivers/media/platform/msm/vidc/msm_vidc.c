@@ -661,7 +661,7 @@ int msm_vidc_streamoff(void *instance, enum v4l2_buf_type i)
 
 	q = msm_comm_get_vb2q(inst, i);
 	if (!q) {
-		if (type == 13 || type == 14)
+		if (i == 13 || i == 14)
 			return 0;
 
 		dprintk(VIDC_ERR,
