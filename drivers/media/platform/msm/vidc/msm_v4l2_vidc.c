@@ -302,11 +302,22 @@ static unsigned int msm_v4l2_poll(struct file *filp,
 	return msm_vidc_poll((void *)vidc_inst, filp, pt);
 }
 
+static long msm_v4l2_unlocked_ioctl(struct file *file,
+		unsigned int cmd, unsigned long arg)
+{
+	long rc = video_ioctl2(file, cmd, arg);
+	if (rc < 0) {
+		pr_err("msm_vidc ioctl failed: cmd 0x%08x (NR %u) -> rc %ld\n",
+			cmd, _IOC_NR(cmd), rc);
+	}
+	return rc;
+}
+
 static const struct v4l2_file_operations msm_v4l2_vidc_fops = {
 	.owner = THIS_MODULE,
 	.open = msm_v4l2_open,
 	.release = msm_v4l2_close,
-	.unlocked_ioctl = video_ioctl2,
+	.unlocked_ioctl = msm_v4l2_unlocked_ioctl,
 #ifdef CONFIG_COMPAT
 	.compat_ioctl32 = msm_v4l2_private,
 #endif
