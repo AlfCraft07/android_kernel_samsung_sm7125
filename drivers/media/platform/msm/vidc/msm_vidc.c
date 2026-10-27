@@ -426,9 +426,10 @@ int msm_vidc_reqbufs(void *instance, struct v4l2_requestbuffers *b)
 	struct msm_vidc_inst *inst = instance;
 	struct buf_queue *q = NULL;
 	int rc = 0;
-
 	if (!inst || !b)
 		return -EINVAL;
+	if (b->type == 13 || b->type == 14)
+		return 0;
 	q = msm_comm_get_vb2q(inst, b->type);
 	if (!q) {
 		dprintk(VIDC_ERR,
@@ -436,13 +437,15 @@ int msm_vidc_reqbufs(void *instance, struct v4l2_requestbuffers *b)
 				b->type);
 		return -EINVAL;
 	}
-
 	mutex_lock(&q->lock);
 	rc = vb2_reqbufs(&q->vb2_bufq, b);
 	mutex_unlock(&q->lock);
-
-	if (rc)
+	if (rc) {
+		/* If userspace is releasing all buffers (count == 0), don't fail teardown */
+		if (b->count == 0)
+			return 0;
 		dprintk(VIDC_ERR, "Failed to get reqbufs, %d\n", rc);
+	}
 	return rc;
 }
 EXPORT_SYMBOL(msm_vidc_reqbufs);
@@ -658,6 +661,9 @@ int msm_vidc_streamoff(void *instance, enum v4l2_buf_type i)
 
 	q = msm_comm_get_vb2q(inst, i);
 	if (!q) {
+		if (type == 13 || type == 14)
+			return 0;
+
 		dprintk(VIDC_ERR,
 			"Failed to find buffer queue for type = %d\n", i);
 		return -EINVAL;

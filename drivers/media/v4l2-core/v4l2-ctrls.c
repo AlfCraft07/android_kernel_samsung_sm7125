@@ -489,7 +489,24 @@ const char * const *v4l2_ctrl_get_menu(u32 id)
 		"Region Grid",
 		NULL,
 	};
-
+	static const char * const hevc_profile[] = {
+		"Main",
+		"Main 10",
+		"Main Still Picture",
+		NULL,
+	};
+	static const char * const hevc_tier[] = {
+		"Main Tier",
+		"High Tier",
+		NULL,
+	};
+	static const char * const vp9_profile[] = {
+		"Profile 0",
+		"Profile 1",
+		"Profile 2",
+		"Profile 3",
+		NULL,
+	};
 
 	switch (id) {
 	case V4L2_CID_MPEG_AUDIO_SAMPLING_FREQ:
@@ -585,7 +602,13 @@ const char * const *v4l2_ctrl_get_menu(u32 id)
 		return dv_it_content_type;
 	case V4L2_CID_DETECT_MD_MODE:
 		return detect_md_mode;
-
+	case V4L2_CID_MPEG_VIDEO_HEVC_PROFILE:
+		return hevc_profile;
+	case V4L2_CID_MPEG_VIDEO_HEVC_TIER_FLAG:
+		return hevc_tier;
+	case V4L2_CID_MPEG_VIDEO_VP9_PROFILE:
+		return vp9_profile;
+		
 	default:
 		return NULL;
 	}
@@ -1080,6 +1103,11 @@ void v4l2_ctrl_fill(u32 id, const char **name, enum v4l2_ctrl_type *type,
 	case V4L2_CID_TUNE_DEEMPHASIS:
 	case V4L2_CID_MPEG_VIDEO_VPX_GOLDEN_FRAME_SEL:
 	case V4L2_CID_DETECT_MD_MODE:
+	case V4L2_CID_MPEG_VIDEO_HEVC_PROFILE:
+	case V4L2_CID_MPEG_VIDEO_HEVC_LEVEL:
+	case V4L2_CID_MPEG_VIDEO_HEVC_TIER_FLAG:
+	case V4L2_CID_MPEG_VIDEO_VP9_PROFILE:
+	case V4L2_CID_MPEG_VIDEO_VP9_LEVEL:
 		*type = V4L2_CTRL_TYPE_MENU;
 		break;
 	case V4L2_CID_LINK_FREQ:
@@ -1173,6 +1201,7 @@ void v4l2_ctrl_fill(u32 id, const char **name, enum v4l2_ctrl_type *type,
 	case V4L2_CID_MPEG_VIDEO_BITRATE_MODE:
 	case V4L2_CID_MPEG_VIDEO_B_FRAMES:
 	case V4L2_CID_MPEG_STREAM_TYPE:
+	case V4L2_CID_MPEG_VIDEO_HEVC_PROFILE:
 		*flags |= V4L2_CTRL_FLAG_UPDATE;
 		break;
 	case V4L2_CID_AUDIO_VOLUME:
