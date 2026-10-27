@@ -404,19 +404,16 @@ static struct msm_vidc_ctrl msm_vdec_ctrls[] = {
 		.menu_skip_mask = 0,
 		.qmenu = NULL,
 	},
-	{
+		{
 		.id = V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 		.name = "HEVC Profile",
 		.type = V4L2_CTRL_TYPE_MENU,
 		.minimum = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		.maximum = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10,
 		.default_value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
-		.menu_skip_mask = ~(
-			(1 << V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
-			(1 << V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10)
-		),
-		.flags = V4L2_CTRL_FLAG_VOLATILE,
-		.qmenu = NULL,
+		.step = 0,
+		.menu_skip_mask = 0,
+		.qmenu = hevc_profile,
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDEO_HEVC_TIER_FLAG,
@@ -425,36 +422,31 @@ static struct msm_vidc_ctrl msm_vdec_ctrls[] = {
 		.minimum = V4L2_MPEG_VIDEO_HEVC_TIER_MAIN,
 		.maximum = V4L2_MPEG_VIDEO_HEVC_TIER_HIGH,
 		.default_value = V4L2_MPEG_VIDEO_HEVC_TIER_MAIN,
-		.menu_skip_mask = ~(
-			(1 << V4L2_MPEG_VIDEO_HEVC_TIER_MAIN) |
-			(1 << V4L2_MPEG_VIDEO_HEVC_TIER_HIGH)
-		),
-		.flags = V4L2_CTRL_FLAG_VOLATILE,
-		.qmenu = NULL,
+		.step = 0,
+		.menu_skip_mask = 0,
+		.qmenu = hevc_tier,
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDEO_VP9_PROFILE,
 		.name = "VP9 Profile",
 		.type = V4L2_CTRL_TYPE_MENU,
-		.minimum = V4L2_MPEG_VIDEO_VP9_PROFILE_0,
-		.maximum = V4L2_MPEG_VIDEO_VP9_PROFILE_2,
-		.default_value = V4L2_MPEG_VIDEO_VP9_PROFILE_0,
-		.menu_skip_mask = ~(
-			(1 << V4L2_MPEG_VIDEO_VP9_PROFILE_0) |
-			(1 << V4L2_MPEG_VIDEO_VP9_PROFILE_2)
-		),
-		.flags = V4L2_CTRL_FLAG_VOLATILE,
-		.qmenu = NULL,
+		.minimum = 0,
+		.maximum = 2,
+		.default_value = 0,
+		.step = 0,
+		.menu_skip_mask = 0,
+		.qmenu = vp9_profile,
 	},
 	{
 		.id = V4L2_CID_MPEG_VIDEO_VP9_LEVEL,
 		.name = "VP9 Level",
 		.type = V4L2_CTRL_TYPE_MENU,
-		.minimum = V4L2_MPEG_VIDEO_VP9_LEVEL_1_0,
-		.maximum = V4L2_MPEG_VIDEO_VP9_LEVEL_5_1,
-		.default_value = V4L2_MPEG_VIDEO_VP9_LEVEL_1_0,
-		.flags = V4L2_CTRL_FLAG_VOLATILE,
-		.qmenu = NULL,
+		.minimum = 0,
+		.maximum = 12,
+		.default_value = 0,
+		.step = 0,
+		.menu_skip_mask = 0,
+		.qmenu = vp9_level,
 	},
 };
 

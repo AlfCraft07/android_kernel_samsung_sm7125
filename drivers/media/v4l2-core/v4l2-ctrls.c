@@ -507,7 +507,23 @@ const char * const *v4l2_ctrl_get_menu(u32 id)
 		"Profile 3",
 		NULL,
 	};
-
+	static const char *const vp9_level[] = {
+		"Unused",
+		"1.0",
+		"1.1",
+		"2.0",
+		"2.1",
+		"3.0",
+		"3.1",
+		"4.0",
+		"4.1",
+		"5.0",
+		"5.1",
+		"6.0",
+		"6.1",
+		NULL
+	};
+	
 	switch (id) {
 	case V4L2_CID_MPEG_AUDIO_SAMPLING_FREQ:
 		return mpeg_audio_sampling_freq;

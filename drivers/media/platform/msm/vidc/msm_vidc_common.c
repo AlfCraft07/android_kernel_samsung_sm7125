@@ -643,8 +643,12 @@ int msm_comm_ctrl_init(struct msm_vidc_inst *inst,
 	for (; idx < num_ctrls; idx++) {
 		struct v4l2_ctrl *ctrl = NULL;
 
-		if (IS_PRIV_CTRL(drv_ctrls[idx].id)) {
-			/*add private control*/
+		if (IS_PRIV_CTRL(drv_ctrls[idx].id) ||
+		    drv_ctrls[idx].id == V4L2_CID_MPEG_VIDEO_HEVC_PROFILE ||
+		    drv_ctrls[idx].id == V4L2_CID_MPEG_VIDEO_HEVC_TIER_FLAG ||
+		    drv_ctrls[idx].id == V4L2_CID_MPEG_VIDEO_VP9_PROFILE ||
+		    drv_ctrls[idx].id == V4L2_CID_MPEG_VIDEO_VP9_LEVEL) {
+			/* treat as custom control to bypass strict std checks */
 			ctrl_cfg.def = drv_ctrls[idx].default_value;
 			ctrl_cfg.flags = 0;
 			ctrl_cfg.id = drv_ctrls[idx].id;
