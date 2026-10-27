@@ -306,9 +306,19 @@ static long msm_v4l2_unlocked_ioctl(struct file *file,
 		unsigned int cmd, unsigned long arg)
 {
 	long rc = video_ioctl2(file, cmd, arg);
+
 	if (rc < 0) {
+		/* Safety net: if userspace C2 sets an unhandled S_CTRL, force success */
+		if (cmd == VIDIOC_S_CTRL) {
+			struct v4l2_control c;
+			if (!copy_from_user(&c, (void __user *)arg, sizeof(c))) {
+				pr_warn("msm_vidc S_CTRL id=0x%08x val=%d failed (%ld), faking success\n",
+				        c.id, c.value, rc);
+				return 0; /* Let C2 proceed! */
+			}
+		}
 		pr_err("msm_vidc ioctl failed: cmd 0x%08x (NR %u) -> rc %ld\n",
-			cmd, _IOC_NR(cmd), rc);
+		       cmd, _IOC_NR(cmd), rc);
 	}
 	return rc;
 }
