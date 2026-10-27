@@ -87,6 +87,18 @@ static const char *const vp9_level[] = {
 	"6.1",
 };
 
+static const char *const hevc_profile[] = {
+	"Main",
+	"Main 10",
+	"Main Still Picture",
+	NULL
+};
+static const char *const hevc_tier[] = {
+	"Main",
+	"High",
+	NULL
+};
+
 static const char *const mpeg2_profile[] = {
 	"Simple",
 	"Main",
