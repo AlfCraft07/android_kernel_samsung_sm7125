@@ -560,6 +560,7 @@ struct v4l2_pix_format {
 /* UBWC 8-bit Y/CbCr 4:2:0  */
 #define V4L2_PIX_FMT_NV12_UBWC        v4l2_fourcc('Q', '1', '2', '8')
 #define V4L2_PIX_FMT_QC12             v4l2_fourcc('Q', '1', '2', 'C')
+#define V4L2_PIX_FMT_HIDC             v4l2_fourcc('H', 'I', 'D', 'C')
 /* UBWC 10-bit Y/CbCr 4:2:0 */
 #define V4L2_PIX_FMT_NV12_TP10_UBWC   v4l2_fourcc('Q', '1', '2', 'A')
 #define V4L2_PIX_FMT_NV12_P010_UBWC   v4l2_fourcc('Q', '1', '2', 'B')

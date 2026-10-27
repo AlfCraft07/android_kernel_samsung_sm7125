@@ -953,6 +953,7 @@ enum hal_uncompressed_format msm_comm_get_hal_uncompressed(int fourcc)
 		break;
 	case V4L2_PIX_FMT_NV12_UBWC:
 	case V4L2_PIX_FMT_QC12:
+	case V4L2_PIX_FMT_HIDC:
 		format = HAL_COLOR_FORMAT_NV12_UBWC;
 		break;
 	case V4L2_PIX_FMT_NV12_TP10_UBWC:

@@ -630,6 +630,14 @@ struct msm_vidc_format vdec_formats[] = {
 		.input_min_count = 4,
 		.output_min_count = 9,
 	},
+		{
+		.name = "HEIC",
+		.description = "HEIC compressed format",
+		.fourcc = 0x43444948,
+		.type = CAPTURE_PORT,
+		.defer_outputs = false,
+		.get_frame_size = get_frame_size_nv12,
+	},
 };
 
 struct msm_vidc_format_constraint dec_pix_format_constraints[] = {
