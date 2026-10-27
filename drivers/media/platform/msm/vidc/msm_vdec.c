@@ -939,7 +939,8 @@ int msm_vdec_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	struct hal_buffer_requirements *bufreq_out2;
 
 	if (!inst || !inst->core || !inst->core->device) {
-		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		pr_err("msm_vdec_s_ctrl failed: id=0x%08x val=%d rc=%d\n",
+		    ctrl->id, ctrl->val, rc);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;

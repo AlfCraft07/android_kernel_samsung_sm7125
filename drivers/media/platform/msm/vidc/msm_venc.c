@@ -1372,7 +1372,8 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	struct hal_heic_grid_enable grid_enable;
 
 	if (!inst || !inst->core || !inst->core->device) {
-		dprintk(VIDC_ERR, "%s invalid parameters\n", __func__);
+		pr_err("msm_venc_s_ctrl failed: id=0x%08x val=%d rc=%d\n",
+		    ctrl->id, ctrl->val, rc);
 		return -EINVAL;
 	}
 	hdev = inst->core->device;
